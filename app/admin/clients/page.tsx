@@ -1,0 +1,126 @@
+'use client'
+import { useEffect, useState } from 'react'
+import DataTable from '@/components/DataTable'
+import { listClients, activateClient, suspendClient, type Client } from '@/lib/api'
+
+const STATUS_COLORS: Record<string, string> = {
+  actif:   'bg-green-500/20 text-green-400',
+  inactif: 'bg-gray-500/20 text-gray-400',
+  suspendu:'bg-red-500/20 text-red-400',
+}
+
+export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  function load(p = page, s = search) {
+    setLoading(true)
+    listClients(p, s)
+      .then(r => { setClients(r.clients); setTotal(r.total) })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, []) // eslint-disable-line
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    setPage(1)
+    load(1, search)
+  }
+
+  async function handleActivate(uid: string) {
+    await activateClient(uid)
+    load()
+  }
+
+  async function handleSuspend(uid: string) {
+    await suspendClient(uid)
+    load()
+  }
+
+  return (
+    <div className="flex flex-col gap-6 max-w-5xl">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Clients</h1>
+          <p className="text-sm text-white/40 mt-1">{total} client{total > 1 ? 's' : ''}</p>
+        </div>
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Rechercher…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="bg-white/8 border border-white/15 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-brand-accent w-52"
+          />
+          <button type="submit" className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+            Chercher
+          </button>
+        </form>
+      </div>
+
+      {loading ? (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center text-white/30 animate-pulse">Chargement…</div>
+      ) : (
+        <DataTable
+          data={clients}
+          columns={[
+            { key: 'telephone', label: 'Téléphone' },
+            { key: 'nom',       label: 'Nom',     render: c => `${c.nom ?? ''} ${c.prenom ?? ''}`.trim() || '—' },
+            {
+              key: 'account_status', label: 'Statut',
+              render: c => (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[c.account_status] ?? 'bg-white/10 text-white/60'}`}>
+                  {c.account_status}
+                </span>
+              ),
+            },
+            { key: 'date_inscription', label: 'Inscription', render: c => c.date_inscription?.slice(0, 10) ?? '—' },
+            { key: 'activated_by', label: 'Activé par', render: c => c.activated_by ?? '—' },
+            {
+              key: 'actions', label: 'Actions',
+              render: c => (
+                <div className="flex gap-2">
+                  {c.account_status !== 'actif' && (
+                    <button onClick={() => handleActivate(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors">
+                      Activer
+                    </button>
+                  )}
+                  {c.account_status !== 'suspendu' && (
+                    <button onClick={() => handleSuspend(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
+                      Suspendre
+                    </button>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      {/* Pagination */}
+      {total > 20 && (
+        <div className="flex gap-2 justify-center">
+          <button
+            disabled={page === 1}
+            onClick={() => { setPage(p => p - 1); load(page - 1) }}
+            className="px-4 py-2 bg-white/8 border border-white/15 rounded-xl text-sm text-white/60 disabled:opacity-30 hover:bg-white/15 transition-colors"
+          >
+            ← Précédent
+          </button>
+          <span className="px-4 py-2 text-sm text-white/40">Page {page}</span>
+          <button
+            disabled={page * 20 >= total}
+            onClick={() => { setPage(p => p + 1); load(page + 1) }}
+            className="px-4 py-2 bg-white/8 border border-white/15 rounded-xl text-sm text-white/60 disabled:opacity-30 hover:bg-white/15 transition-colors"
+          >
+            Suivant →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
