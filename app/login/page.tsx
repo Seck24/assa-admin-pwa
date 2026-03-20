@@ -4,22 +4,24 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!password.trim()) return
+    if (!username.trim() || !password.trim()) return
     setLoading(true)
     setError('')
     try {
       const res = await fetch('/api/admin-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       })
-      if (!res.ok) { setError('Mot de passe incorrect.'); return }
+      const data = await res.json()
+      if (!data.success) { setError(data.message || 'Identifiants incorrects'); return }
       router.push('/admin')
     } catch {
       setError('Erreur de connexion.')
@@ -36,21 +38,31 @@ export default function LoginPage() {
             <span className="text-3xl font-black text-white">A</span>
           </div>
           <h1 className="text-xl font-bold text-white">ASSA Admin</h1>
-          <p className="text-xs text-brand-accent/70">Espace administrateur</p>
+          <p className="text-xs text-white/40">Espace administrateur</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-              Mot de passe admin
-            </label>
+            <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Identifiant</label>
+            <input
+              type="text"
+              placeholder="nom d'utilisateur"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              autoComplete="username"
+              autoCapitalize="off"
+              className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-brand-accent transition-colors"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Mot de passe</label>
             <input
               type="password"
               placeholder="••••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-brand-accent transition-colors"
               autoComplete="current-password"
+              className="w-full bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-base outline-none focus:border-brand-accent transition-colors"
             />
           </div>
 

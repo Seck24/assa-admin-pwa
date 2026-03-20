@@ -107,3 +107,33 @@ export function listActivations(page = 1, commercial_uid = '') {
 export function listCommissions(periode = '') {
   return apiFetch<Commission[]>('/commissions-list', { periode })
 }
+
+// ── Admin Users ───────────────────────────────────────────────────────────────
+
+export interface AdminUser {
+  uid: string
+  nom: string
+  username: string
+  role: 'super_admin' | 'admin'
+  actif: boolean
+  must_change_password: boolean
+  created_by?: string
+  date_creation?: string
+  last_login?: string
+}
+
+export function listAdmins() {
+  return apiFetch<AdminUser[]>('/admins-list', {})
+}
+
+export function createAdmin(data: { nom: string; username: string; role: string; created_by: string }) {
+  return apiFetch<{ success: boolean; message?: string; uid?: string; username?: string; temp_password?: string }>('/admin-create', data)
+}
+
+export function toggleAdmin(uid: string, actif: boolean) {
+  return apiFetch<{ success: boolean }>('/admin-toggle', { uid, actif })
+}
+
+export function resetAdminPassword(uid: string) {
+  return apiFetch<{ success: boolean; temp_password?: string }>('/admin-reset-password', { uid })
+}

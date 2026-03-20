@@ -3,21 +3,29 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV = [
-  { href: '/admin',              icon: '🏠', label: 'Accueil'      },
-  { href: '/admin/commerciaux',  icon: '👥', label: 'Commerciaux'  },
-  { href: '/admin/clients',      icon: '📱', label: 'Clients'      },
-  { href: '/admin/activations',  icon: '⚡', label: 'Activations'  },
-  { href: '/admin/commissions',  icon: '💰', label: 'Commissions'  },
+  { href: '/admin',              icon: '🏠', label: 'Accueil',         roles: ['super_admin', 'admin'] },
+  { href: '/admin/commerciaux',  icon: '👥', label: 'Commerciaux',     roles: ['super_admin', 'admin'] },
+  { href: '/admin/clients',      icon: '📱', label: 'Clients',         roles: ['super_admin', 'admin'] },
+  { href: '/admin/activations',  icon: '⚡', label: 'Activations',     roles: ['super_admin', 'admin'] },
+  { href: '/admin/commissions',  icon: '💰', label: 'Commissions',     roles: ['super_admin', 'admin'] },
+  { href: '/admin/admins',       icon: '🛡️', label: 'Administrateurs', roles: ['super_admin'] },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  role: string
+  nom: string
+}
+
+export default function Sidebar({ role, nom }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
 
   async function logout() {
     await fetch('/api/admin-auth', { method: 'DELETE' })
     router.push('/login')
   }
+
+  const visibleNav = NAV.filter(n => n.roles.includes(role))
 
   return (
     <aside className="w-56 flex flex-col bg-brand-dark border-r border-white/10 shrink-0">
@@ -32,9 +40,19 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Admin info */}
+      {nom && (
+        <div className="px-5 py-3 border-b border-white/5">
+          <p className="text-xs text-white/30 truncate">{nom}</p>
+          <p className="text-xs font-semibold text-brand-accent/70">
+            {role === 'super_admin' ? 'Super Admin' : 'Admin'}
+          </p>
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-1 p-3 pt-4">
-        {NAV.map(({ href, icon, label }) => {
+        {visibleNav.map(({ href, icon, label }) => {
           const active = pathname === href || (href !== '/admin' && pathname.startsWith(href))
           return (
             <Link
