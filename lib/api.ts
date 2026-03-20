@@ -76,16 +76,28 @@ export function listCommerciaux() {
   return apiFetch<Commercial[]>('/commerciaux-list', {})
 }
 
-export function createCommercial(data: { nom: string; telephone: string; code_commercial: string; code_secret: string }) {
-  return apiFetch<{ success: boolean; message: string; uid?: string }>('/commercial-create', data)
+export async function createCommercial(data: { nom: string; telephone: string }) {
+  const res = await fetch('/api/commercial-create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    cache: 'no-store',
+  })
+  return res.json() as Promise<{ success: boolean; message?: string; code_commercial?: string; code_secret?: string }>
 }
 
 export function toggleCommercial(uid: string, actif: boolean) {
   return apiFetch<{ success: boolean }>('/commercial-toggle', { uid, actif })
 }
 
-export function resetCommercialSecret(uid: string, new_secret: string) {
-  return apiFetch<{ success: boolean }>('/commercial-reset-secret', { uid, new_secret })
+export async function resetCommercialSecret(uid: string) {
+  const res = await fetch('/api/commercial-reset-secret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid }),
+    cache: 'no-store',
+  })
+  return res.json() as Promise<{ success: boolean; code_secret?: string }>
 }
 
 export function listClients(page = 1, search = '') {

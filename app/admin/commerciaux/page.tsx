@@ -11,10 +11,12 @@ export default function CommerciauPage() {
   const [data, setData] = useState<Commercial[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
-  const [showReset, setShowReset] = useState<Commercial | null>(null)
-  const [newSecret, setNewSecret] = useState('')
-  const [form, setForm] = useState({ nom: '', telephone: '', code_commercial: '', code_secret: '' })
+  const [form, setForm] = useState({ nom: '', telephone: '' })
+  const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState('')
+
+  // Credentials modal after creation or reset
+  const [credentials, setCredentials] = useState<{ code_commercial: string; code_secret: string; nom: string } | null>(null)
 
   function load() {
     setLoading(true)
@@ -24,9 +26,18 @@ export default function CommerciauPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    setSubmitting(true)
+    setMsg('')
     const res = await createCommercial(form)
-    if (res.success) { setShowCreate(false); setForm({ nom: '', telephone: '', code_commercial: '', code_secret: '' }); load() }
-    else setMsg(res.message || 'Erreur')
+    setSubmitting(false)
+    if (res.success && res.code_commercial && res.code_secret) {
+      setShowCreate(false)
+      setForm({ nom: '', telephone: '' })
+      setCredentials({ code_commercial: res.code_commercial, code_secret: res.code_secret, nom: form.nom })
+      load()
+    } else {
+      setMsg(res.message || 'Erreur lors de la création')
+    }
   }
 
   async function handleToggle(c: Commercial) {
@@ -34,12 +45,11 @@ export default function CommerciauPage() {
     load()
   }
 
-  async function handleReset(e: React.FormEvent) {
-    e.preventDefault()
-    if (!showReset) return
-    await resetCommercialSecret(showReset.uid, newSecret)
-    setShowReset(null)
-    setNewSecret('')
+  async function handleReset(c: Commercial) {
+    const res = await resetCommercialSecret(c.uid)
+    if (res.success && res.code_secret) {
+      setCredentials({ code_commercial: c.code_commercial, code_secret: res.code_secret, nom: c.nom })
+    }
   }
 
   return (
@@ -50,7 +60,7 @@ export default function CommerciauPage() {
           <p className="text-sm text-white/40 mt-1">{data.length} commercial{data.length > 1 ? 'x' : ''}</p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => { setShowCreate(true); setMsg('') }}
           className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow shadow-brand/40"
         >
           <span>+</span> Nouveau commercial
@@ -86,10 +96,10 @@ export default function CommerciauPage() {
                     {c.actif ? 'Désactiver' : 'Activer'}
                   </button>
                   <button
-                    onClick={() => setShowReset(c)}
+                    onClick={() => handleReset(c)}
                     className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-white/10 text-white/60 hover:bg-white/15 transition-colors"
                   >
-                    🔑 Secret
+                    🔑 Nouveau code
                   </button>
                 </div>
               ),
@@ -98,55 +108,76 @@ export default function CommerciauPage() {
         />
       )}
 
-      {/* Modal création */}
+      {/* Modal création — seulement nom + téléphone */}
       {showCreate && (
         <Modal title="Nouveau commercial" onClose={() => setShowCreate(false)}>
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
-            {[
-              { key: 'nom',              label: 'Nom complet',      type: 'text',     ph: 'Jean Kouassi' },
-              { key: 'telephone',        label: 'Téléphone',        type: 'tel',      ph: '07 00 00 00 00' },
-              { key: 'code_commercial',  label: 'Code commercial',  type: 'text',     ph: 'COM001' },
-              { key: 'code_secret',      label: 'Code secret',      type: 'password', ph: '••••••••' },
-            ].map(f => (
-              <div key={f.key} className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">{f.label}</label>
-                <input
-                  type={f.type}
-                  placeholder={f.ph}
-                  value={form[f.key as keyof typeof form]}
-                  onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                  required
-                  className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
-                />
-              </div>
-            ))}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Nom complet</label>
+              <input
+                type="text"
+                placeholder="Jean Kouassi"
+                value={form.nom}
+                onChange={e => setForm(p => ({ ...p, nom: e.target.value }))}
+                required
+                className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Téléphone</label>
+              <input
+                type="tel"
+                placeholder="07 00 00 00 00"
+                value={form.telephone}
+                onChange={e => setForm(p => ({ ...p, telephone: e.target.value }))}
+                required
+                className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
+              />
+            </div>
+            <p className="text-xs text-white/30">Le code commercial et le code secret seront générés automatiquement.</p>
             {msg && <p className="text-red-400 text-sm">{msg}</p>}
-            <button type="submit" className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors">
-              Créer le commercial
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {submitting ? 'Création…' : 'Créer le commercial'}
             </button>
           </form>
         </Modal>
       )}
 
-      {/* Modal reset secret */}
-      {showReset && (
-        <Modal title={`Nouveau secret — ${showReset.nom}`} onClose={() => setShowReset(null)}>
-          <form onSubmit={handleReset} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Nouveau code secret</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={newSecret}
-                onChange={e => setNewSecret(e.target.value)}
-                required
-                className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
-              />
+      {/* Modal credentials — affiché après création ou reset */}
+      {credentials && (
+        <Modal title="Identifiants du commercial" onClose={() => setCredentials(null)}>
+          <div className="flex flex-col gap-5">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 text-yellow-400 text-xs">
+              ⚠️ Notez ces identifiants maintenant — le code secret ne sera plus affiché.
             </div>
-            <button type="submit" className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors">
-              Réinitialiser
+
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs text-white/40 uppercase tracking-wider font-semibold">Commercial</p>
+              <p className="text-white font-semibold text-base">{credentials.nom}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/8 border border-white/15 rounded-xl px-4 py-3">
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Code commercial</p>
+                <p className="text-white font-mono font-bold text-xl tracking-widest">{credentials.code_commercial}</p>
+              </div>
+              <div className="bg-white/8 border border-white/15 rounded-xl px-4 py-3">
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Code secret</p>
+                <p className="text-white font-mono font-bold text-xl tracking-widest">{credentials.code_secret}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setCredentials(null)}
+              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              J'ai noté, fermer
             </button>
-          </form>
+          </div>
         </Modal>
       )}
     </div>
