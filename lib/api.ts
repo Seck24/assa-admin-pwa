@@ -37,12 +37,10 @@ export interface Client {
   uid: string
   telephone: string
   nom: string
-  prenom: string
-  email?: string
+  nom_complet?: string
   account_status: string
   date_inscription: string
   date_activation?: string
-  activated_by?: string
 }
 
 export interface Activation {

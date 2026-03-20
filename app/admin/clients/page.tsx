@@ -63,8 +63,9 @@ export default function ClientsPage() {
         <DataTable
           data={clients}
           columns={[
-            { key: 'telephone', label: 'Téléphone' },
-            { key: 'nom',       label: 'Nom',     render: c => `${c.nom ?? ''} ${c.prenom ?? ''}`.trim() || '—' },
+            { key: 'telephone',   label: 'Téléphone' },
+            { key: 'nom',         label: 'Nom commerce' },
+            { key: 'nom_complet', label: 'Nom complet', render: c => c.nom_complet || '—' },
             {
               key: 'account_status', label: 'Statut',
               render: c => (
