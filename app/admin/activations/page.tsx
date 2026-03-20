@@ -24,16 +24,16 @@ export default function ActivationsPage() {
   }, []) // eslint-disable-line
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="flex flex-col gap-4 md:gap-6 max-w-5xl">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Activations</h1>
-          <p className="text-sm text-white/40 mt-1">{total} activation{total > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Activations</h1>
+          <p className="text-xs md:text-sm text-white/40 mt-1">{total} activation{total > 1 ? 's' : ''}</p>
         </div>
         <select
           value={filter}
           onChange={e => { setFilter(e.target.value); setPage(1); load(1, e.target.value) }}
-          className="bg-white/8 border border-white/15 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-brand-accent"
+          className="bg-white/8 border border-white/15 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-white text-xs md:text-sm outline-none focus:border-brand-accent max-w-[180px] md:max-w-none"
         >
           <option value="">Tous les commerciaux</option>
           {commerciaux.map(c => (

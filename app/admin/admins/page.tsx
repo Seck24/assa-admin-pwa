@@ -45,15 +45,15 @@ export default function AdminsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 md:gap-6 max-w-4xl">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Administrateurs</h1>
-          <p className="text-sm text-white/40 mt-1">{data.length} compte{data.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Administrateurs</h1>
+          <p className="text-xs md:text-sm text-white/40 mt-1">{data.length} compte{data.length > 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow shadow-brand/40"
+          className="flex items-center gap-1.5 md:gap-2 bg-brand hover:bg-brand-light text-white text-xs md:text-sm font-semibold px-3 md:px-4 py-2 md:py-2.5 rounded-xl transition-colors shadow shadow-brand/40 shrink-0"
         >
           + Nouvel admin
         </button>

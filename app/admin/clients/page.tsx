@@ -42,11 +42,11 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="flex flex-col gap-4 md:gap-6 max-w-5xl">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Clients</h1>
-          <p className="text-sm text-white/40 mt-1">{total} client{total > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Clients</h1>
+          <p className="text-xs md:text-sm text-white/40 mt-1">{total} client{total > 1 ? 's' : ''}</p>
         </div>
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
@@ -54,9 +54,9 @@ export default function ClientsPage() {
             placeholder="Rechercher…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-white/8 border border-white/15 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-brand-accent w-52"
+            className="bg-white/8 border border-white/15 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-white text-xs md:text-sm outline-none focus:border-brand-accent w-36 md:w-52"
           />
-          <button type="submit" className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <button type="submit" className="bg-brand hover:bg-brand-light text-white text-xs md:text-sm font-semibold px-3 md:px-4 py-2 md:py-2.5 rounded-xl transition-colors">
             Chercher
           </button>
         </form>
