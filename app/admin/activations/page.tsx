@@ -27,13 +27,13 @@ export default function ActivationsPage() {
     <div className="flex flex-col gap-4 md:gap-6 max-w-5xl">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">Activations</h1>
-          <p className="text-xs md:text-sm text-white/40 mt-1">{total} activation{total > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Activations</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">{total} activation{total > 1 ? 's' : ''}</p>
         </div>
         <select
           value={filter}
           onChange={e => { setFilter(e.target.value); setPage(1); load(1, e.target.value) }}
-          className="bg-white/8 border border-white/15 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-white text-xs md:text-sm outline-none focus:border-brand-accent max-w-[180px] md:max-w-none"
+          className="bg-white border border-gray-300 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-gray-900 text-xs md:text-sm outline-none focus:border-brand-accent max-w-[180px] md:max-w-none"
         >
           <option value="">Tous les commerciaux</option>
           {commerciaux.map(c => (
@@ -43,7 +43,7 @@ export default function ActivationsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center text-white/30 animate-pulse">Chargement…</div>
+        <div className="bg-gray-200 rounded-2xl p-8 text-center animate-pulse">Chargement…</div>
       ) : (
         <DataTable
           data={activations}
@@ -68,11 +68,11 @@ export default function ActivationsPage() {
 
       {total > 20 && (
         <div className="flex gap-2 justify-center">
-          <button disabled={page === 1} onClick={() => { setPage(p => p - 1); load(page - 1) }} className="px-4 py-2 bg-white/8 border border-white/15 rounded-xl text-sm text-white/60 disabled:opacity-30 hover:bg-white/15 transition-colors">
+          <button disabled={page === 1} onClick={() => { setPage(p => p - 1); load(page - 1) }} className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-colors">
             ← Précédent
           </button>
-          <span className="px-4 py-2 text-sm text-white/40">Page {page}</span>
-          <button disabled={page * 20 >= total} onClick={() => { setPage(p => p + 1); load(page + 1) }} className="px-4 py-2 bg-white/8 border border-white/15 rounded-xl text-sm text-white/60 disabled:opacity-30 hover:bg-white/15 transition-colors">
+          <span className="px-4 py-2 text-sm text-gray-500">Page {page}</span>
+          <button disabled={page * 20 >= total} onClick={() => { setPage(p => p + 1); load(page + 1) }} className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-colors">
             Suivant →
           </button>
         </div>

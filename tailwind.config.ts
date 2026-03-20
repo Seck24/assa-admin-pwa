@@ -13,7 +13,7 @@ const config: Config = {
           dark:    '#122870',
           light:   '#2550B8',
           accent:  '#3A6FF0',
-          bg:      '#0D1F4F',
+          bg:      '#F5F0E8',
         },
       },
     },

@@ -48,8 +48,8 @@ export default function AdminsPage() {
     <div className="flex flex-col gap-4 md:gap-6 max-w-4xl">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">Administrateurs</h1>
-          <p className="text-xs md:text-sm text-white/40 mt-1">{data.length} compte{data.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Administrateurs</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">{data.length} compte{data.length > 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -60,7 +60,7 @@ export default function AdminsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center text-white/30 animate-pulse">Chargement…</div>
+        <div className="bg-gray-200 rounded-2xl p-8 text-center animate-pulse">Chargement…</div>
       ) : (
         <DataTable
           data={data}
