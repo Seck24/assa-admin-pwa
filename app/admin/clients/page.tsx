@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
-import { listClients, activateClient, suspendClient, type Client } from '@/lib/api'
+import { listClients, suspendClient, type Client } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
   actif:   'bg-green-500/20 text-green-400',
@@ -29,11 +29,6 @@ export default function ClientsPage() {
     e.preventDefault()
     setPage(1)
     load(1, search)
-  }
-
-  async function handleActivate(uid: string) {
-    await activateClient(uid)
-    load()
   }
 
   async function handleSuspend(uid: string) {
@@ -79,22 +74,14 @@ export default function ClientsPage() {
               ),
             },
             { key: 'date_inscription', label: 'Inscription', render: c => c.date_inscription?.slice(0, 10) ?? '—' },
-            { key: 'activated_by', label: 'Activé par', render: c => c.activated_by ?? '—' },
             {
               key: 'actions', label: 'Actions',
-              render: c => (
-                <div className="flex gap-2">
-                  {c.account_status !== 'actif' && (
-                    <button onClick={() => handleActivate(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors">
-                      Activer
-                    </button>
-                  )}
-                  {c.account_status !== 'suspendu' && (
-                    <button onClick={() => handleSuspend(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
-                      Suspendre
-                    </button>
-                  )}
-                </div>
+              render: c => c.account_status === 'suspendu' ? (
+                <span className="text-xs text-gray-400">—</span>
+              ) : (
+                <button onClick={() => handleSuspend(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
+                  Suspendre
+                </button>
               ),
             },
           ]}
