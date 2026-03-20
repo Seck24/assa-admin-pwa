@@ -63,6 +63,8 @@ export interface Commission {
   activations_count: number
   montant_par_activation: number
   commission_totale: number
+  montant_paye: number
+  reste_a_payer: number
   periode: string
 }
 
@@ -113,11 +115,15 @@ export function suspendClient(uid: string) {
 }
 
 export function listActivations(page = 1, commercial_uid = '') {
-  return apiFetch<{ activations: Activation[]; total: number }>('/activations-list', { page, commercial_uid })
+  return apiFetch<{ activations: Activation[]; total: number }>('/activations-list-v2', { page, commercial_uid })
 }
 
 export function listCommissions(periode = '') {
   return apiFetch<Commission[]>('/commissions-list', { periode })
+}
+
+export function reglerCommission(commercial_uid: string, periode: string, montant: number) {
+  return apiFetch<{ success: boolean; message?: string }>('/commissions-regler', { commercial_uid, periode, montant })
 }
 
 // ── Admin Users ───────────────────────────────────────────────────────────────
