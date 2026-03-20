@@ -101,7 +101,7 @@ export async function resetCommercialSecret(uid: string) {
 }
 
 export function listClients(page = 1, search = '') {
-  return apiFetch<{ clients: Client[]; total: number }>('/users-list', { page, search })
+  return apiFetch<{ clients: Client[]; total: number }>('/users-list-v2', { page, search })
 }
 
 export function activateClient(uid: string) {
