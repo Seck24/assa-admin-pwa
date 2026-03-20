@@ -31,13 +31,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Get existing codes to generate unique code_commercial
-    const listRes = await fetch(`${N8N}/commerciaux-list`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-      cache: 'no-store',
-    })
-    const commerciaux: { code_commercial: string }[] = listRes.ok ? await listRes.json() : []
+    // n8n returns empty body when table is empty — handle gracefully
+    let commerciaux: { code_commercial: string }[] = []
+    try {
+      const listRes = await fetch(`${N8N}/commerciaux-list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+        cache: 'no-store',
+      })
+      const text = await listRes.text()
+      if (text) commerciaux = JSON.parse(text)
+    } catch { /* table vide ou erreur réseau → COM001 par défaut */ }
     const code_commercial = nextComCode(commerciaux.map(c => c.code_commercial))
 
     // Generate code_secret and hash it (SHA256 to match commercial app login)
