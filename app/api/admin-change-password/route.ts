@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { pbkdf2Sync, randomBytes } from 'crypto'
 import { verifyToken, createToken, COOKIE_NAME } from '@/lib/jwt'
 
 const N8N = 'https://automation.preo-ia.info/webhook/admin'
+
+async function n8nPost<T>(path: string, body: object): Promise<T> {
+  const res = await fetch(`${N8N}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  })
+  return res.json() as Promise<T>
+}
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value
@@ -17,19 +28,32 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${N8N}/change-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ admin_uid: payload.admin_uid, old_password, new_password }),
-      cache: 'no-store',
-    })
-    const data = await res.json()
+    // 1. Get admin from DB to fetch current hash/salt
+    const admin = await n8nPost<{
+      found: boolean; mot_de_passe_hash: string; salt: string
+    }>('/get-admin', { username: payload.username })
 
-    if (!data.success) {
+    if (!admin.found) return NextResponse.json({ success: false }, { status: 401 })
+
+    // 2. Verify old password
+    const oldHash = pbkdf2Sync(old_password, admin.salt, 100000, 64, 'sha512').toString('hex')
+    if (oldHash !== admin.mot_de_passe_hash) {
       return NextResponse.json({ success: false, message: 'Ancien mot de passe incorrect' }, { status: 400 })
     }
 
-    // Re-issue JWT with must_change_password = false
+    // 3. Hash new password
+    const newSalt = randomBytes(32).toString('hex')
+    const newHash = pbkdf2Sync(new_password, newSalt, 100000, 64, 'sha512').toString('hex')
+
+    // 4. Update in DB
+    await n8nPost('/update-password', {
+      admin_uid:            payload.admin_uid,
+      new_hash:             newHash,
+      new_salt:             newSalt,
+      must_change_password: false,
+    })
+
+    // 5. Re-issue JWT with must_change_password = false
     const newToken = await createToken({
       admin_uid:            payload.admin_uid,
       username:             payload.username,

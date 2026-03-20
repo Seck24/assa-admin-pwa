@@ -126,14 +126,27 @@ export function listAdmins() {
   return apiFetch<AdminUser[]>('/admins-list', {})
 }
 
-export function createAdmin(data: { nom: string; username: string; role: string; created_by: string }) {
-  return apiFetch<{ success: boolean; message?: string; uid?: string; username?: string; temp_password?: string }>('/admin-create', data)
+// createAdmin and resetAdminPassword go through Next.js API (crypto handled server-side)
+export async function createAdmin(data: { nom: string; username: string; role: string; created_by: string }) {
+  const res = await fetch('/api/admin-users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'create', ...data }),
+    cache: 'no-store',
+  })
+  return res.json() as Promise<{ success: boolean; message?: string; uid?: string; username?: string; temp_password?: string }>
 }
 
 export function toggleAdmin(uid: string, actif: boolean) {
   return apiFetch<{ success: boolean }>('/admin-toggle', { uid, actif })
 }
 
-export function resetAdminPassword(uid: string) {
-  return apiFetch<{ success: boolean; temp_password?: string }>('/admin-reset-password', { uid })
+export async function resetAdminPassword(uid: string) {
+  const res = await fetch('/api/admin-users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'reset_password', uid }),
+    cache: 'no-store',
+  })
+  return res.json() as Promise<{ success: boolean; temp_password?: string }>
 }

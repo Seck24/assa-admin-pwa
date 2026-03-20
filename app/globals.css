@@ -16,9 +16,24 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Force dark background + white text on all inputs — prevents browser white override */
 input, select, textarea {
   font-family: inherit;
   font-size: 16px;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+}
+
+/* Fix browser autofill background (Chrome/Safari inject blue/yellow bg) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #1B3A8A inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
 }
 
 button {
@@ -26,13 +41,6 @@ button {
   cursor: pointer;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0D1F4F;
-}
-::-webkit-scrollbar-thumb {
-  background: #1B3A8A;
-  border-radius: 3px;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0D1F4F; }
+::-webkit-scrollbar-thumb { background: #1B3A8A; border-radius: 3px; }
