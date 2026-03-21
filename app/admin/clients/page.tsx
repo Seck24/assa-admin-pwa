@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
 import { listClients, activateClient, suspendClient, type Client } from '@/lib/api'
+import { useRole } from '@/lib/useRole'
 
 const STATUS_COLORS: Record<string, string> = {
   actif:   'bg-green-500/20 text-green-400',
@@ -17,6 +18,8 @@ export default function ClientsPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [captureView, setCaptureView] = useState<Client | null>(null)
+  const role = useRole()
+  const isSuperAdmin = role === 'super_admin'
 
   function load(p = page, s = search) {
     setLoading(true)
@@ -83,9 +86,9 @@ export default function ClientsPage() {
               ),
             },
             { key: 'date_inscription', label: 'Inscription', render: c => c.date_inscription?.slice(0, 10) ?? '—' },
-            {
-              key: 'capture', label: 'Capture',
-              render: c => (
+            ...(isSuperAdmin ? [{
+              key: 'capture' as const, label: 'Capture',
+              render: (c: Client) => (
                 <button
                   onClick={() => c.has_capture ? setCaptureView(c) : null}
                   disabled={!c.has_capture}
@@ -98,10 +101,10 @@ export default function ClientsPage() {
                   {c.has_capture ? '📷 Voir' : '—'}
                 </button>
               ),
-            },
-            {
-              key: 'actions', label: 'Actions',
-              render: c => (
+            }] : []),
+            ...(isSuperAdmin ? [{
+              key: 'actions' as const, label: 'Actions',
+              render: (c: Client) => (
                 <div className="flex gap-2">
                   {c.account_status !== 'actif' && (
                     <button onClick={() => handleActivate(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors">
@@ -115,7 +118,7 @@ export default function ClientsPage() {
                   )}
                 </div>
               ),
-            },
+            }] : []),
           ]}
         />
       )}

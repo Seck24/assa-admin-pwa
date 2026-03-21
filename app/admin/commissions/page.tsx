@@ -3,12 +3,21 @@ import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
 import { listCommissions, reglerCommission, type Commission } from '@/lib/api'
+import { useRole } from '@/lib/useRole'
 
 function money(n: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(n)
 }
 
 export default function CommissionsPage() {
+  const role = useRole()
+  if (role !== 'super_admin') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500 text-sm">Accès réservé au Super Admin.</p>
+      </div>
+    )
+  }
   const [data, setData] = useState<Commission[]>([])
   const [loading, setLoading] = useState(true)
   const [periode, setPeriode] = useState('')

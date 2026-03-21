@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import KpiCard from '@/components/KpiCard'
 import { getStatsOverview, type StatsOverview } from '@/lib/api'
+import { useRole } from '@/lib/useRole'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR').format(n)
@@ -14,6 +15,8 @@ export default function AdminHome() {
   const [stats, setStats] = useState<StatsOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const role = useRole()
+  const isSuperAdmin = role === 'super_admin'
 
   useEffect(() => {
     getStatsOverview()
@@ -21,6 +24,13 @@ export default function AdminHome() {
       .catch(() => setError('Impossible de charger les statistiques.'))
       .finally(() => setLoading(false))
   }, [])
+
+  const quickLinks = [
+    { href: '/admin/commerciaux', icon: '👥', label: 'Gérer les commerciaux' },
+    { href: '/admin/clients',     icon: '📱', label: 'Gérer les clients'     },
+    { href: '/admin/activations', icon: '⚡', label: 'Voir les activations'  },
+    ...(isSuperAdmin ? [{ href: '/admin/commissions', icon: '💰', label: 'Calcul commissions' }] : []),
+  ]
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 max-w-5xl">
@@ -31,7 +41,7 @@ export default function AdminHome() {
 
       {loading && (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: isSuperAdmin ? 6 : 4 }).map((_, i) => (
             <div key={i} className="bg-brand/30 rounded-2xl p-4 md:p-5 h-24 md:h-28 animate-pulse" />
           ))}
         </div>
@@ -45,20 +55,15 @@ export default function AdminHome() {
           <KpiCard icon="📱" label="Clients" value={fmt(stats.total_clients)} color="text-white" />
           <KpiCard icon="⚡" label="Activations totales" value={fmt(stats.total_activations)} color="text-yellow-300" />
           <KpiCard icon="🌟" label="Activations aujourd'hui" value={fmt(stats.activations_today)} color="text-emerald-300" sub="Aujourd'hui" />
-          <KpiCard icon="💵" label="CA total" value={money(stats.ca_total)} color="text-white" />
-          <KpiCard icon="💰" label="Commissions" value={money(stats.commissions_total)} color="text-yellow-300" />
+          {isSuperAdmin && <KpiCard icon="💵" label="CA total" value={money(stats.ca_total)} color="text-white" />}
+          {isSuperAdmin && <KpiCard icon="💰" label="Commissions" value={money(stats.commissions_total)} color="text-yellow-300" />}
         </div>
       )}
 
       <div className="bg-brand rounded-2xl p-4 md:p-5 shadow-md">
         <p className="text-[10px] md:text-xs font-semibold text-white/60 uppercase tracking-wider mb-3">Accès rapide</p>
         <div className="grid grid-cols-2 gap-2 md:gap-3">
-          {[
-            { href: '/admin/commerciaux', icon: '👥', label: 'Gérer les commerciaux' },
-            { href: '/admin/clients',     icon: '📱', label: 'Gérer les clients'     },
-            { href: '/admin/activations', icon: '⚡', label: 'Voir les activations'  },
-            { href: '/admin/commissions', icon: '💰', label: 'Calcul commissions'    },
-          ].map(({ href, icon, label }) => (
+          {quickLinks.map(({ href, icon, label }) => (
             <a
               key={href}
               href={href}

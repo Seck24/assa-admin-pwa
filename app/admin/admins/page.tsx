@@ -3,8 +3,17 @@ import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
 import { listAdmins, createAdmin, toggleAdmin, resetAdminPassword, type AdminUser } from '@/lib/api'
+import { useRole } from '@/lib/useRole'
 
 export default function AdminsPage() {
+  const role = useRole()
+  if (role !== 'super_admin') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500 text-sm">Accès réservé au Super Admin.</p>
+      </div>
+    )
+  }
   const [data, setData] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
