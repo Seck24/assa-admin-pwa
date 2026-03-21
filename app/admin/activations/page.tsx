@@ -43,7 +43,7 @@ export default function ActivationsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-gray-200 rounded-2xl p-8 text-center animate-pulse">Chargement…</div>
+        <div className="bg-brand/30 rounded-2xl p-8 text-center text-gray-700 animate-pulse">Chargement…</div>
       ) : (
         <DataTable
           data={activations}

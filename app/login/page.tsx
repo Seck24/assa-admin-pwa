@@ -51,7 +51,7 @@ export default function LoginPage() {
               onChange={e => setUsername(e.target.value)}
               autoComplete="username"
               autoCapitalize="off"
-              className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 text-base outline-none focus:border-brand-accent transition-colors"
+              className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 text-base outline-none focus:border-brand-accent placeholder:text-gray-400 transition-colors"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -62,7 +62,7 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="current-password"
-              className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 text-base outline-none focus:border-brand-accent transition-colors"
+              className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 text-base outline-none focus:border-brand-accent placeholder:text-gray-400 transition-colors"
             />
           </div>
 

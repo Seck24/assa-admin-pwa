@@ -63,7 +63,7 @@ export default function CommissionsPage() {
         <select
           value={periode}
           onChange={e => { setPeriode(e.target.value); load(e.target.value) }}
-          className="bg-white border border-gray-300 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-gray-900 text-xs md:text-sm outline-none focus:border-brand-accent"
+          className="bg-white border border-gray-300 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-gray-900 text-xs md:text-sm outline-none focus:border-brand-accent placeholder:text-gray-400"
         >
           <option value="">Toutes les périodes</option>
           {months.map(m => (
@@ -74,27 +74,27 @@ export default function CommissionsPage() {
 
       {data.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 md:p-5">
-            <p className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Total commissions</p>
-            <p className="text-lg md:text-2xl font-bold text-emerald-600">{money(totalCommissions)}</p>
+          <div className="bg-brand rounded-2xl p-4 md:p-5 shadow-md">
+            <p className="text-[10px] md:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Total commissions</p>
+            <p className="text-lg md:text-2xl font-bold text-yellow-300">{money(totalCommissions)}</p>
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 md:p-5">
-            <p className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payé</p>
-            <p className="text-lg md:text-2xl font-bold text-blue-600">{money(totalPaye)}</p>
+          <div className="bg-brand rounded-2xl p-4 md:p-5 shadow-md">
+            <p className="text-[10px] md:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Payé</p>
+            <p className="text-lg md:text-2xl font-bold text-emerald-300">{money(totalPaye)}</p>
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 md:p-5">
-            <p className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reste à payer</p>
-            <p className="text-lg md:text-2xl font-bold text-red-500">{money(totalReste)}</p>
+          <div className="bg-brand rounded-2xl p-4 md:p-5 shadow-md">
+            <p className="text-[10px] md:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Reste à payer</p>
+            <p className="text-lg md:text-2xl font-bold text-red-300">{money(totalReste)}</p>
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 md:p-5">
-            <p className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Activations</p>
-            <p className="text-lg md:text-2xl font-bold text-yellow-600">{totalActivations}</p>
+          <div className="bg-brand rounded-2xl p-4 md:p-5 shadow-md">
+            <p className="text-[10px] md:text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Activations</p>
+            <p className="text-lg md:text-2xl font-bold text-white">{totalActivations}</p>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="bg-gray-200 rounded-2xl p-8 text-center animate-pulse">Chargement…</div>
+        <div className="bg-brand/30 rounded-2xl p-8 text-center text-gray-700 animate-pulse">Chargement…</div>
       ) : (
         <DataTable
           data={data}

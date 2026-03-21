@@ -68,7 +68,7 @@ export default function CommerciauPage() {
       </div>
 
       {loading ? (
-        <div className="bg-gray-200 rounded-2xl p-8 text-center animate-pulse">Chargement…</div>
+        <div className="bg-brand/30 rounded-2xl p-8 text-center text-gray-700 animate-pulse">Chargement…</div>
       ) : (
         <DataTable
           data={data}
@@ -97,7 +97,7 @@ export default function CommerciauPage() {
                   </button>
                   <button
                     onClick={() => handleReset(c)}
-                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-white/10 text-white/60 hover:bg-white/15 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors"
                   >
                     🔑 Nouveau code
                   </button>
