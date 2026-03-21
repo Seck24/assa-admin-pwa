@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
-import { listClients, activateClient, suspendClient, type Client } from '@/lib/api'
+import { listClients, activateClient, suspendClient, deleteClient, type Client } from '@/lib/api'
 import { useRole } from '@/lib/useRole'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -18,6 +18,7 @@ export default function ClientsPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [captureView, setCaptureView] = useState<Client | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const role = useRole()
   const isSuperAdmin = role === 'super_admin'
 
@@ -44,6 +45,17 @@ export default function ClientsPage() {
 
   async function handleSuspend(uid: string) {
     await suspendClient(uid)
+    load()
+  }
+
+  async function handleDelete(uid: string) {
+    if (confirmDelete !== uid) {
+      setConfirmDelete(uid)
+      setTimeout(() => setConfirmDelete(null), 4000)
+      return
+    }
+    await deleteClient(uid)
+    setConfirmDelete(null)
     load()
   }
 
@@ -116,6 +128,16 @@ export default function ClientsPage() {
                       Suspendre
                     </button>
                   )}
+                  <button
+                    onClick={() => handleDelete(c.uid)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                      confirmDelete === c.uid
+                        ? 'bg-red-600 text-white'
+                        : 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                    }`}
+                  >
+                    {confirmDelete === c.uid ? 'Confirmer ?' : 'Supprimer'}
+                  </button>
                 </div>
               ),
             }] : []),

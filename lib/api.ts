@@ -105,6 +105,10 @@ export function suspendClient(uid: string) {
   return apiFetch<{ success: boolean }>('/user-suspend', { uid })
 }
 
+export function deleteClient(uid: string) {
+  return apiFetch<{ success: boolean }>('/user-delete', { uid })
+}
+
 export function listActivations(page = 1, commercial_uid = '') {
   return apiFetch<{ activations: Activation[]; total: number }>('/activations-list-v2', { page, commercial_uid })
 }
