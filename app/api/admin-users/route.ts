@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const salt    = randomBytes(32).toString('hex')
     const hash    = pbkdf2Sync(tempPwd, salt, 100000, 64, 'sha512').toString('hex')
 
-    await n8nPost('/update-password', { admin_uid: uid, new_hash: hash, new_salt: salt, must_change_password: true })
+    await n8nPost('/update-password', { admin_uid: uid, new_hash: hash, new_salt: salt, must_change_password: false })
     return NextResponse.json({ success: true, temp_password: tempPwd })
   }
 

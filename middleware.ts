@@ -13,16 +13,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // must_change_password: redirect to change-password page
-  if (payload.must_change_password && pathname !== '/admin/change-password') {
-    return NextResponse.redirect(new URL('/admin/change-password', req.url))
-  }
-
-  // If already changed, don't allow going back to change-password
-  if (!payload.must_change_password && pathname === '/admin/change-password') {
-    return NextResponse.redirect(new URL('/admin', req.url))
-  }
-
   return NextResponse.next()
 }
 
