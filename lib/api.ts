@@ -41,6 +41,8 @@ export interface Client {
   account_status: string
   date_inscription: string
   date_activation?: string
+  has_capture?: boolean
+  capture_paiement?: string
 }
 
 export interface Activation {
