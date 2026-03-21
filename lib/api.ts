@@ -92,15 +92,6 @@ export function toggleCommercial(uid: string, actif: boolean) {
   return apiFetch<{ success: boolean }>('/commercial-toggle', { uid, actif })
 }
 
-export async function resetCommercialSecret(uid: string) {
-  const res = await fetch('/api/commercial-reset-secret', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid }),
-    cache: 'no-store',
-  })
-  return res.json() as Promise<{ success: boolean; code_secret?: string }>
-}
 
 export function listClients(page = 1, search = '') {
   return apiFetch<{ clients: Client[]; total: number }>('/users-list-v2', { page, search })
