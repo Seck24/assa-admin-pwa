@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
       maxAge: 8 * 60 * 60,
       path: '/',
     })
+    response.cookies.set('assa_role', payload.role, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 8 * 60 * 60,
+      path: '/',
+    })
     return response
   } catch {
     return NextResponse.json({ success: false, message: 'Erreur serveur' }, { status: 500 })

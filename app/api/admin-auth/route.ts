@@ -58,6 +58,14 @@ export async function POST(req: NextRequest) {
       maxAge: 8 * 60 * 60,
       path: '/',
     })
+    // Cookie rôle lisible côté client (non sensible)
+    response.cookies.set('assa_role', admin.role, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 8 * 60 * 60,
+      path: '/',
+    })
     return response
   } catch {
     return NextResponse.json({ success: false, message: 'Erreur serveur' }, { status: 500 })
@@ -67,5 +75,6 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const res = NextResponse.json({ success: true })
   res.cookies.delete(COOKIE_NAME)
+  res.cookies.delete('assa_role')
   return res
 }
