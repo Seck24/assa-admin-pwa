@@ -75,7 +75,7 @@ export default function Sidebar({ role, nom }: SidebarProps) {
       <div className="p-3 border-t border-white/10">
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
         >
           <span className="text-base">🚪</span>
           Déconnexion
