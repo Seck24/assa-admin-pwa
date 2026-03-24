@@ -19,8 +19,12 @@ export default function ClientsPage() {
   const [total, setTotal] = useState(0)
   const [captureView, setCaptureView] = useState<Client | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [sortCapture, setSortCapture] = useState(false)
   const role = useRole()
   const isSuperAdmin = role === 'super_admin'
+
+  // Nombre de clients avec capture en attente (essai + has_capture)
+  const pendingCaptures = clients.filter(c => c.has_capture && c.account_status !== 'actif').length
 
   function load(p = page, s = search) {
     setLoading(true)
@@ -84,7 +88,18 @@ export default function ClientsPage() {
         <div className="bg-brand/30 rounded-2xl p-8 text-center text-gray-700 animate-pulse">Chargement…</div>
       ) : (
         <DataTable
-          data={clients}
+          data={sortCapture
+            ? [...clients].sort((a, b) => {
+                // En premier : has_capture=true + statut≠actif (à activer)
+                const aPending = a.has_capture && a.account_status !== 'actif' ? 0 : 1
+                const bPending = b.has_capture && b.account_status !== 'actif' ? 0 : 1
+                if (aPending !== bPending) return aPending - bPending
+                // Ensuite : has_capture=true + actif (déjà traité)
+                const aHas = a.has_capture ? 0 : 1
+                const bHas = b.has_capture ? 0 : 1
+                return aHas - bHas
+              })
+            : clients}
           columns={[
             { key: 'telephone', label: 'Téléphone' },
             { key: 'nom', label: 'Nom commerce' },
@@ -99,20 +114,37 @@ export default function ClientsPage() {
             },
             { key: 'date_inscription', label: 'Inscription', render: c => c.date_inscription?.slice(0, 10) ?? '—' },
             ...(isSuperAdmin ? [{
-              key: 'capture' as const, label: 'Capture',
-              render: (c: Client) => (
+              key: 'capture' as const,
+              label: (
                 <button
-                  onClick={() => c.has_capture ? setCaptureView(c) : null}
-                  disabled={!c.has_capture}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
-                    c.has_capture
-                      ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 cursor-pointer'
-                      : 'bg-white/5 text-white/20 cursor-not-allowed'
-                  }`}
+                  onClick={() => setSortCapture(s => !s)}
+                  className={`flex items-center gap-1 transition-colors ${sortCapture ? 'text-brand-accent' : ''}`}
                 >
-                  {c.has_capture ? '📷 Voir' : '—'}
+                  Capture {sortCapture ? '▲' : ''}
+                  {pendingCaptures > 0 && (
+                    <span className="ml-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {pendingCaptures}
+                    </span>
+                  )}
                 </button>
-              ),
+              ) as unknown as string,
+              render: (c: Client) => {
+                const isActivated = c.account_status === 'actif'
+                const hasCapture = c.has_capture
+                if (!hasCapture) return <span className="text-white/20 text-xs">—</span>
+                return (
+                  <button
+                    onClick={() => setCaptureView(c)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                      isActivated
+                        ? 'bg-white/5 text-white/30 cursor-pointer'
+                        : 'bg-green-500/20 text-green-400 hover:bg-green-500/30 cursor-pointer'
+                    }`}
+                  >
+                    {isActivated ? '📷 Voir' : '📷 Voir'}
+                  </button>
+                )
+              },
             }] : []),
             ...(isSuperAdmin ? [{
               key: 'actions' as const, label: 'Actions',

@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { usePendingCaptures } from '@/lib/usePendingCaptures'
 
 const NAV = [
   { href: '/admin',             icon: '🏠', label: 'Accueil',      roles: ['super_admin', 'admin'] },
@@ -14,6 +15,7 @@ const NAV = [
 export default function MobileNav({ role }: { role: string }) {
   const pathname = usePathname()
   const visible = NAV.filter(n => n.roles.includes(role))
+  const pendingCaptures = usePendingCaptures()
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-dark/95 backdrop-blur border-t border-white/10">
@@ -28,7 +30,14 @@ export default function MobileNav({ role }: { role: string }) {
                 active ? 'text-brand-accent' : 'text-white/40'
               }`}
             >
-              <span className="text-xl leading-none">{icon}</span>
+              <span className="text-xl leading-none relative">
+                {icon}
+                {href === '/admin/clients' && pendingCaptures > 0 && (
+                  <span className="absolute -top-1 -right-2 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingCaptures}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-medium leading-none">{label}</span>
             </Link>
           )

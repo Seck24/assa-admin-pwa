@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { usePendingCaptures } from '@/lib/usePendingCaptures'
 
 const NAV = [
   { href: '/admin',              icon: '🏠', label: 'Accueil',         roles: ['super_admin', 'admin'] },
@@ -19,6 +20,7 @@ interface SidebarProps {
 export default function Sidebar({ role, nom }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
+  const pendingCaptures = usePendingCaptures()
 
   async function logout() {
     await fetch('/api/admin-auth', { method: 'DELETE' })
@@ -64,7 +66,14 @@ export default function Sidebar({ role, nom }: SidebarProps) {
                   : 'text-white/50 hover:text-white hover:bg-white/5'
               }`}
             >
-              <span className="text-base">{icon}</span>
+              <span className="text-base relative">
+                {icon}
+                {href === '/admin/clients' && pendingCaptures > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingCaptures}
+                  </span>
+                )}
+              </span>
               {label}
             </Link>
           )
