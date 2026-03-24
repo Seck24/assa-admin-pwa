@@ -32,7 +32,8 @@ function decodeJSON(str: string): unknown {
 }
 
 async function getKey(usage: 'sign' | 'verify'): Promise<CryptoKey> {
-  const secret = process.env.ADMIN_JWT_SECRET || 'fallback-dev-secret-change-in-prod'
+  const secret = process.env.ADMIN_JWT_SECRET
+  if (!secret) throw new Error('ADMIN_JWT_SECRET is required')
   const keyData = new TextEncoder().encode(secret)
   return crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, [usage])
 }
