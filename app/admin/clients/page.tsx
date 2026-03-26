@@ -20,17 +20,23 @@ export default function ClientsPage() {
   const [captureView, setCaptureView] = useState<Client | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [sortCapture, setSortCapture] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const role = useRole()
   const isSuperAdmin = role === 'super_admin'
 
   // Nombre de clients avec capture en attente (essai + has_capture)
   const pendingCaptures = clients.filter(c => c.has_capture && c.account_status !== 'actif').length
 
-  function load(p = page, s = search) {
+  async function load(p = page, s = search) {
     setLoading(true)
-    listClients(p, s)
-      .then(r => { setClients(r.clients); setTotal(r.total) })
-      .finally(() => setLoading(false))
+    try {
+      const r = await listClients(p, s)
+      setClients(r.clients)
+      setTotal(r.total)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, []) // eslint-disable-line
@@ -42,25 +48,52 @@ export default function ClientsPage() {
   }
 
   async function handleActivate(uid: string) {
-    await activateClient(uid)
-    setCaptureView(null)
-    load()
+    if (actionLoading) return
+    setActionLoading(uid)
+    setError(null)
+    try {
+      await activateClient(uid)
+      setCaptureView(null)
+      await load()
+    } catch (e) {
+      setError(`Erreur activation : ${e instanceof Error ? e.message : 'Réessayez'}`)
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   async function handleSuspend(uid: string) {
-    await suspendClient(uid)
-    load()
+    if (actionLoading) return
+    setActionLoading(uid)
+    setError(null)
+    try {
+      await suspendClient(uid)
+      await load()
+    } catch (e) {
+      setError(`Erreur suspension : ${e instanceof Error ? e.message : 'Réessayez'}`)
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   async function handleDelete(uid: string) {
+    if (actionLoading) return
     if (confirmDelete !== uid) {
       setConfirmDelete(uid)
       setTimeout(() => setConfirmDelete(null), 4000)
       return
     }
-    await deleteClient(uid)
-    setConfirmDelete(null)
-    load()
+    setActionLoading(uid)
+    setError(null)
+    try {
+      await deleteClient(uid)
+      setConfirmDelete(null)
+      await load()
+    } catch (e) {
+      setError(`Erreur suppression : ${e instanceof Error ? e.message : 'Réessayez'}`)
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   return (
@@ -83,6 +116,13 @@ export default function ClientsPage() {
           </button>
         </form>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-600 text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 font-bold ml-4">✕</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="bg-brand/30 rounded-2xl p-8 text-center text-gray-700 animate-pulse">Chargement…</div>
@@ -152,18 +192,27 @@ export default function ClientsPage() {
               render: (c: Client) => (
                 <div className="flex gap-2">
                   {c.account_status !== 'actif' && (
-                    <button onClick={() => handleActivate(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors">
-                      Activer
+                    <button
+                      onClick={() => handleActivate(c.uid)}
+                      disabled={actionLoading === c.uid}
+                      className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-40 disabled:cursor-wait"
+                    >
+                      {actionLoading === c.uid ? '...' : 'Activer'}
                     </button>
                   )}
                   {c.account_status !== 'suspendu' && (
-                    <button onClick={() => handleSuspend(c.uid)} className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
-                      Suspendre
+                    <button
+                      onClick={() => handleSuspend(c.uid)}
+                      disabled={actionLoading === c.uid}
+                      className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-40 disabled:cursor-wait"
+                    >
+                      {actionLoading === c.uid ? '...' : 'Suspendre'}
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(c.uid)}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                    disabled={!!actionLoading}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-40 disabled:cursor-wait ${
                       confirmDelete === c.uid
                         ? 'bg-red-600 text-white'
                         : 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
@@ -223,9 +272,10 @@ export default function ClientsPage() {
             {captureView.account_status !== 'actif' && (
               <button
                 onClick={() => handleActivate(captureView.uid)}
-                className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
+                disabled={!!actionLoading}
+                className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-wait"
               >
-                Valider le paiement et activer le compte
+                {actionLoading ? 'Activation en cours...' : 'Valider le paiement et activer le compte'}
               </button>
             )}
           </div>
