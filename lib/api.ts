@@ -8,7 +8,13 @@ async function apiFetch<T>(path: string, body: object): Promise<T> {
     cache: 'no-store',
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json() as Promise<T>
+  const text = await res.text()
+  if (!text) return { success: true } as T
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new Error(`Réponse invalide du serveur`)
+  }
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
