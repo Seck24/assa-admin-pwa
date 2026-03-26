@@ -103,6 +103,7 @@ export default function ClientsPage() {
           columns={[
             { key: 'telephone', label: 'Téléphone' },
             { key: 'nom', label: 'Nom commerce' },
+            { key: 'ville', label: 'Ville/Commune', render: c => c.ville || '—' },
             { key: 'nom_complet', label: 'Nom complet', render: c => c.nom_complet || '—' },
             {
               key: 'account_status', label: 'Statut',

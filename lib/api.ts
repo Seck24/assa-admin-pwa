@@ -37,6 +37,7 @@ export interface Client {
   uid: string
   telephone: string
   nom: string
+  ville?: string
   nom_complet?: string
   account_status: string
   date_inscription: string
