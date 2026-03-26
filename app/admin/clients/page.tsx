@@ -47,12 +47,12 @@ export default function ClientsPage() {
     load(1, search)
   }
 
-  async function handleActivate(uid: string) {
+  async function handleActivate(uid: string, currentStatus?: string) {
     if (actionLoading) return
     setActionLoading(uid)
     setError(null)
     try {
-      await activateClient(uid)
+      await activateClient(uid, currentStatus === 'suspendu')
       setCaptureView(null)
       await load()
     } catch (e) {
@@ -193,11 +193,11 @@ export default function ClientsPage() {
                 <div className="flex gap-2">
                   {c.account_status !== 'actif' && (
                     <button
-                      onClick={() => handleActivate(c.uid)}
+                      onClick={() => handleActivate(c.uid, c.account_status)}
                       disabled={actionLoading === c.uid}
                       className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-40 disabled:cursor-wait"
                     >
-                      {actionLoading === c.uid ? '...' : 'Activer'}
+                      {actionLoading === c.uid ? '...' : c.account_status === 'suspendu' ? 'Réactiver' : 'Activer'}
                     </button>
                   )}
                   {c.account_status !== 'suspendu' && (
@@ -271,7 +271,7 @@ export default function ClientsPage() {
 
             {captureView.account_status !== 'actif' && (
               <button
-                onClick={() => handleActivate(captureView.uid)}
+                onClick={() => handleActivate(captureView.uid, captureView.account_status)}
                 disabled={!!actionLoading}
                 className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-wait"
               >

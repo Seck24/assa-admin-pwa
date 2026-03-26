@@ -104,8 +104,9 @@ export function listClients(page = 1, search = '') {
   return apiFetch<{ clients: Client[]; total: number }>('/users-list-v2', { page, search })
 }
 
-export function activateClient(uid: string) {
-  return apiFetch<{ success: boolean }>('/user-activate', { uid })
+export function activateClient(uid: string, isSuspended = false) {
+  const path = isSuspended ? '/user-reactivate' : '/user-activate'
+  return apiFetch<{ success: boolean }>(path, { uid })
 }
 
 export function suspendClient(uid: string) {
