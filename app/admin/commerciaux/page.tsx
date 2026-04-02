@@ -14,14 +14,17 @@ async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secr
   return res.json()
 }
 
+const BASE_URL = 'https://assa-admin.preo-ia.info'
+
 const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
   `🔑 Code commercial : ${code}\n` +
   `🔒 Mot de passe : ${mdp}\n` +
   `📞 Téléphone (connexion) : ${tel}\n\n` +
-  `📱 Application ASSA (pour vos démos) :\nhttps://assa.preo-ia.info/\n\n` +
-  `📊 Tableau de bord propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
-  `📄 Vos guides sont joints à ce message.\n\n` +
+  `📱 Application ASSA (démos) :\nhttps://assa.preo-ia.info/\n\n` +
+  `📊 Dashboard propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
+  `📄 Guide Prise en Main :\n${BASE_URL}/docs/ASSA_Guide_Prise_En_Main.pdf\n\n` +
+  `📄 Brief Commercial :\n${BASE_URL}/docs/ASSA_Brief_Commercial.pdf\n\n` +
   `Bonne vente ! 🚀`
 
 function toWaPhone(telephone: string): string {
@@ -29,43 +32,10 @@ function toWaPhone(telephone: string): string {
   return cleaned.startsWith('225') ? cleaned : '225' + cleaned
 }
 
-async function sharePackage(nom: string, telephone: string, code: string, mdp: string) {
+function sharePackage(nom: string, telephone: string, code: string, mdp: string) {
   const text = MSG_TEMPLATE(nom, code, mdp, telephone)
-
-  if (!navigator.share) {
-    // Fallback: WhatsApp deep link (text only)
-    const phone = toWaPhone(telephone)
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
-    return
-  }
-
-  try {
-    // Fetch both PDFs as files
-    const [guide, brief] = await Promise.all([
-      fetch('/docs/ASSA_Guide_Prise_En_Main.pdf').then(r => r.blob()),
-      fetch('/docs/ASSA_Brief_Commercial.pdf').then(r => r.blob()),
-    ])
-    // Credentials as a text file (WhatsApp ignores `text` when sharing files)
-    const credsBlob = new Blob([text], { type: 'text/plain' })
-    const files = [
-      new File([credsBlob], `ASSA_Acces_${nom.split(' ')[0]}.txt`, { type: 'text/plain' }),
-      new File([guide], 'ASSA_Guide_Prise_En_Main.pdf', { type: 'application/pdf' }),
-      new File([brief], 'ASSA_Brief_Commercial.pdf', { type: 'application/pdf' }),
-    ]
-
-    if (navigator.canShare && navigator.canShare({ files })) {
-      await navigator.share({ files })
-    } else {
-      // Can't share files — share text only
-      await navigator.share({ text })
-    }
-  } catch (e) {
-    if ((e as Error).name !== 'AbortError') {
-      // Last resort: WhatsApp link
-      const phone = toWaPhone(telephone)
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
-    }
-  }
+  const phone = toWaPhone(telephone)
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
 }
 
 interface MdpInfo {
@@ -84,7 +54,6 @@ export default function CommerciauPage() {
   const [msg, setMsg] = useState('')
   const [mdpModal, setMdpModal] = useState<MdpInfo | null>(null)
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
-  const [sharing, setSharing] = useState(false)
 
   function load() {
     setLoading(true)
@@ -124,11 +93,9 @@ export default function CommerciauPage() {
     }
   }
 
-  async function handleShare() {
+  function handleShare() {
     if (!mdpModal) return
-    setSharing(true)
-    await sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
-    setSharing(false)
+    sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
   }
 
   return (
@@ -253,10 +220,9 @@ export default function CommerciauPage() {
 
             <button
               onClick={handleShare}
-              disabled={sharing}
-              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm"
+              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
             >
-              {sharing ? 'Préparation…' : '📦 Envoyer le package complet'}
+              📦 Envoyer le package complet
             </button>
             <p className="text-xs text-white/30 text-center -mt-2">Identifiants + 2 guides PDF + liens via WhatsApp</p>
 
