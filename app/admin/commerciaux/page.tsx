@@ -45,13 +45,16 @@ async function sharePackage(nom: string, telephone: string, code: string, mdp: s
       fetch('/docs/ASSA_Guide_Prise_En_Main.pdf').then(r => r.blob()),
       fetch('/docs/ASSA_Brief_Commercial.pdf').then(r => r.blob()),
     ])
+    // Credentials as a text file (WhatsApp ignores `text` when sharing files)
+    const credsBlob = new Blob([text], { type: 'text/plain' })
     const files = [
+      new File([credsBlob], `ASSA_Acces_${nom.split(' ')[0]}.txt`, { type: 'text/plain' }),
       new File([guide], 'ASSA_Guide_Prise_En_Main.pdf', { type: 'application/pdf' }),
       new File([brief], 'ASSA_Brief_Commercial.pdf', { type: 'application/pdf' }),
     ]
 
     if (navigator.canShare && navigator.canShare({ files })) {
-      await navigator.share({ text, files })
+      await navigator.share({ files })
     } else {
       // Can't share files — share text only
       await navigator.share({ text })
