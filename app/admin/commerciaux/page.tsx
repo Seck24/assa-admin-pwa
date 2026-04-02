@@ -14,8 +14,8 @@ async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secr
   return res.json()
 }
 
-const GUIDE_URL = 'https://drive.google.com/file/d/1m9-EHRvQ7XjZNLBaM5M93tQvcgMJeG54/view'
-const BRIEF_URL = 'https://drive.google.com/file/d/1ysahxzL1LjhlIV7RfZcrtSqqY6MiQEzF/view'
+const GUIDE_URL = 'https://drive.google.com/file/d/1nkNTljkhfkgvm6KElxlPzrPXRMjWr6OG/view'
+const BRIEF_URL = 'https://drive.google.com/file/d/19OzDUT5JYEBGP_NeDTrNe5TeKMT2n9UL/view'
 
 const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
