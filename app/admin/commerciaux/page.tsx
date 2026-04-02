@@ -23,8 +23,8 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📞 Téléphone (connexion) : ${tel}\n\n` +
   `📱 Application ASSA (démos) :\nhttps://assa.preo-ia.info/\n\n` +
   `📊 Dashboard propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
-  `📄 Guide Prise en Main :\n${BASE_URL}/docs/ASSA_Guide_Prise_En_Main.pdf\n\n` +
-  `📄 Brief Commercial :\n${BASE_URL}/docs/ASSA_Brief_Commercial.pdf\n\n` +
+  `📄 Guide Prise en Main :\n${BASE_URL}/ASSA_Guide_Prise_En_Main.pdf\n\n` +
+  `📄 Brief Commercial :\n${BASE_URL}/ASSA_Brief_Commercial.pdf\n\n` +
   `Bonne vente ! 🚀`
 
 function toWaPhone(telephone: string): string {
