@@ -14,7 +14,7 @@ async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secr
   return res.json()
 }
 
-const BASE_URL = 'https://assa-admin.preo-ia.info'
+const BASE_URL = 'https://assa.preo-ia.info'
 
 const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
