@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
-import { listCommerciaux, createCommercial, toggleCommercial, type Commercial } from '@/lib/api'
+import { listCommerciaux, createCommercial, toggleCommercial, createDemoAccount, type Commercial } from '@/lib/api'
 
 export default function CommerciauPage() {
   const [data, setData] = useState<Commercial[]>([])
@@ -12,6 +12,11 @@ export default function CommerciauPage() {
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState('')
   const [createdCode, setCreatedCode] = useState<{ code: string; nom: string } | null>(null)
+  const [demoTarget, setDemoTarget] = useState<Commercial | null>(null)
+  const [demoPhone, setDemoPhone] = useState('')
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
+  const [demoMsg, setDemoMsg] = useState('')
+  const [demoResult, setDemoResult] = useState<{ telephone: string; mot_de_passe: string; nom_commerce: string } | null>(null)
 
   function load() {
     setLoading(true)
@@ -38,6 +43,20 @@ export default function CommerciauPage() {
   async function handleToggle(c: Commercial) {
     await toggleCommercial(c.uid, !c.actif)
     load()
+  }
+
+  async function handleDemoCreate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!demoTarget) return
+    setDemoSubmitting(true)
+    setDemoMsg('')
+    const res = await createDemoAccount({ telephone: demoPhone, nom_commercial: demoTarget.nom, code_commercial: demoTarget.code_commercial })
+    setDemoSubmitting(false)
+    if (res.success && res.telephone) {
+      setDemoResult({ telephone: res.telephone, mot_de_passe: res.mot_de_passe!, nom_commerce: res.nom_commerce! })
+    } else {
+      setDemoMsg(res.message || 'Erreur lors de la création')
+    }
   }
 
   return (
@@ -76,12 +95,21 @@ export default function CommerciauPage() {
             {
               key: 'actions', label: 'Actions',
               render: (c) => (
-                <button
-                  onClick={() => handleToggle(c)}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${c.actif ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}
-                >
-                  {c.actif ? 'Désactiver' : 'Activer'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggle(c)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${c.actif ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}
+                  >
+                    {c.actif ? 'Désactiver' : 'Activer'}
+                  </button>
+                  <button
+                    onClick={() => { setDemoTarget(c); setDemoPhone(c.telephone || ''); setDemoMsg(''); setDemoResult(null) }}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                    title="Créer un compte démo ASSA pour ce commercial"
+                  >
+                    Compte démo
+                  </button>
+                </div>
               ),
             },
           ]}
@@ -124,6 +152,65 @@ export default function CommerciauPage() {
               {submitting ? 'Création…' : 'Créer le commercial'}
             </button>
           </form>
+        </Modal>
+      )}
+
+      {/* Modal démo — saisie du téléphone */}
+      {demoTarget && !demoResult && (
+        <Modal title={`Compte démo — ${demoTarget.nom}`} onClose={() => setDemoTarget(null)}>
+          <form onSubmit={handleDemoCreate} className="flex flex-col gap-4">
+            <p className="text-xs text-white/40">Créer un compte ASSA actif pour que <strong className="text-white/60">{demoTarget.nom}</strong> puisse faire des démonstrations aux clients.</p>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Téléphone du compte démo</label>
+              <input
+                type="tel"
+                placeholder="07 00 00 00 00"
+                value={demoPhone}
+                onChange={e => setDemoPhone(e.target.value)}
+                required
+                className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
+              />
+            </div>
+            <p className="text-xs text-white/30">Un mot de passe temporaire sera généré automatiquement.</p>
+            {demoMsg && <p className="text-red-400 text-sm">{demoMsg}</p>}
+            <button
+              type="submit"
+              disabled={demoSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {demoSubmitting ? 'Création…' : 'Créer le compte démo'}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal résultat — affiche les credentials démo */}
+      {demoResult && (
+        <Modal title="Compte démo créé ✓" onClose={() => { setDemoTarget(null); setDemoResult(null) }}>
+          <div className="flex flex-col gap-4">
+            <p className="text-xs text-white/40 text-center">Transmettez ces identifiants au commercial — le mot de passe ne sera affiché qu&apos;une seule fois.</p>
+            <div className="bg-white/8 border border-white/15 rounded-xl px-5 py-4 flex flex-col gap-3">
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Nom du compte</p>
+                <p className="text-white font-semibold">{demoResult.nom_commerce}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Téléphone</p>
+                <p className="text-white font-mono font-bold text-lg">{demoResult.telephone}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Mot de passe temporaire</p>
+                <p className="text-white font-mono font-bold text-2xl tracking-widest">{demoResult.mot_de_passe}</p>
+              </div>
+            </div>
+            <p className="text-xs text-white/30 text-center">Le commercial se connecte sur assa-dashboard.preo-ia.info</p>
+            <button
+              onClick={() => { setDemoTarget(null); setDemoResult(null) }}
+              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
         </Modal>
       )}
 
