@@ -39,7 +39,10 @@ function sharePackage(nom: string, telephone: string, code: string, mdp: string)
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
 }
 
+const SENT_KEY = 'assa_kit_sent'
+
 interface MdpInfo {
+  uid: string
   nom: string
   telephone: string
   code_commercial: string
@@ -55,6 +58,9 @@ export default function CommerciauPage() {
   const [msg, setMsg] = useState('')
   const [mdpModal, setMdpModal] = useState<MdpInfo | null>(null)
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
+  const [sentUids, setSentUids] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(SENT_KEY) || '[]')) } catch { return new Set() }
+  })
 
   function load() {
     setLoading(true)
@@ -74,7 +80,7 @@ export default function CommerciauPage() {
       setShowCreate(false)
       setForm({ nom: '', telephone: '' })
       load()
-      setMdpModal({ nom: createdNom, telephone: createdTel, code_commercial: res.code_commercial, mdp: res.code_secret })
+      setMdpModal({ uid: '', nom: createdNom, telephone: createdTel, code_commercial: res.code_commercial, mdp: res.code_secret })
     } else {
       setMsg(res.message || 'Erreur lors de la création')
     }
@@ -90,13 +96,19 @@ export default function CommerciauPage() {
     const res = await resetSecret(c)
     setGeneratingFor(null)
     if (res.success && res.code_secret) {
-      setMdpModal({ nom: c.nom, telephone: c.telephone, code_commercial: c.code_commercial, mdp: res.code_secret })
+      setMdpModal({ uid: c.uid, nom: c.nom, telephone: c.telephone, code_commercial: c.code_commercial, mdp: res.code_secret })
     }
   }
 
   function handleShare() {
     if (!mdpModal) return
     sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
+    if (mdpModal.uid) {
+      const next = new Set(sentUids).add(mdpModal.uid)
+      setSentUids(next)
+      localStorage.setItem(SENT_KEY, JSON.stringify([...next]))
+    }
+    setMdpModal(null)
   }
 
   return (
@@ -145,7 +157,7 @@ export default function CommerciauPage() {
                   <button
                     onClick={() => handleGenererMdp(c)}
                     disabled={generatingFor === c.uid}
-                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-50 ${sentUids.has(c.uid) ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
                   >
                     {generatingFor === c.uid ? '…' : '🔑 MDP'}
                   </button>
