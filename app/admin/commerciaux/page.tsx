@@ -16,6 +16,7 @@ async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secr
 
 const GUIDE_URL = 'https://drive.google.com/file/d/1nkNTljkhfkgvm6KElxlPzrPXRMjWr6OG/view'
 const BRIEF_URL = 'https://drive.google.com/file/d/19OzDUT5JYEBGP_NeDTrNe5TeKMT2n9UL/view'
+const INSTALL_URL = 'https://drive.google.com/file/d/1X1j3dFYXLUSjnXTCC6vbNUwmYgdKKBqw/view'
 
 const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
@@ -26,6 +27,7 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📊 Dashboard propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
   `📄 Guide Prise en Main :\n${GUIDE_URL}\n\n` +
   `📄 Brief Commercial :\n${BRIEF_URL}\n\n` +
+  `📲 Guide Installation Téléphone :\n${INSTALL_URL}\n\n` +
   `Bonne vente ! 🚀`
 
 function toWaPhone(telephone: string): string {
@@ -227,7 +229,7 @@ export default function CommerciauPage() {
               <div className="border-t border-white/10 pt-3 flex flex-col gap-1 text-xs text-white/40">
                 <p>📱 assa.preo-ia.info — Application ASSA (démos)</p>
                 <p>📊 assa-dashboard.preo-ia.info — Dashboard propriétaire</p>
-                <p>📄 2 guides inclus dans l&apos;envoi</p>
+                <p>📄 3 guides inclus dans l&apos;envoi</p>
               </div>
             </div>
 
