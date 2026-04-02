@@ -99,16 +99,6 @@ export function toggleCommercial(uid: string, actif: boolean) {
   return apiFetch<{ success: boolean }>('/commercial-toggle', { uid, actif })
 }
 
-export async function createDemoAccount(data: { telephone: string; nom_commercial: string; code_commercial: string }) {
-  const res = await fetch('/api/commercial-demo-create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  return res.json() as Promise<{ success: boolean; message?: string; telephone?: string; mot_de_passe?: string; nom_commerce?: string }>
-}
-
 
 export function listClients(page = 1, search = '') {
   return apiFetch<{ clients: Client[]; total: number }>('/users-list-v2', { page, search })

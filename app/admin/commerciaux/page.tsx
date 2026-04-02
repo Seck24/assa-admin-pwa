@@ -2,7 +2,30 @@
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
-import { listCommerciaux, createCommercial, toggleCommercial, createDemoAccount, type Commercial } from '@/lib/api'
+import { listCommerciaux, createCommercial, toggleCommercial, type Commercial } from '@/lib/api'
+
+async function resetSecret(uid: string): Promise<{ success: boolean; code_secret?: string; message?: string }> {
+  const res = await fetch('/api/commercial-reset-secret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid }),
+    cache: 'no-store',
+  })
+  return res.json()
+}
+
+function buildWhatsAppLink(telephone: string, nom: string, codeCommercial: string, mdp: string) {
+  const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
+  const msg = `Bonjour ${nom}, voici vos accès ASSA :\n\n🔑 Code commercial : ${codeCommercial}\n🔒 Mot de passe : ${mdp}\n\n📲 Connectez-vous sur : assa-dashboard.preo-ia.info`
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+}
+
+interface MdpInfo {
+  nom: string
+  telephone: string
+  code_commercial: string
+  mdp: string
+}
 
 export default function CommerciauPage() {
   const [data, setData] = useState<Commercial[]>([])
@@ -11,12 +34,8 @@ export default function CommerciauPage() {
   const [form, setForm] = useState({ nom: '', telephone: '' })
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState('')
-  const [createdCode, setCreatedCode] = useState<{ code: string; nom: string } | null>(null)
-  const [demoTarget, setDemoTarget] = useState<Commercial | null>(null)
-  const [demoPhone, setDemoPhone] = useState('')
-  const [demoSubmitting, setDemoSubmitting] = useState(false)
-  const [demoMsg, setDemoMsg] = useState('')
-  const [demoResult, setDemoResult] = useState<{ telephone: string; mot_de_passe: string; nom_commerce: string } | null>(null)
+  const [mdpModal, setMdpModal] = useState<MdpInfo | null>(null)
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null)
 
   function load() {
     setLoading(true)
@@ -32,9 +51,19 @@ export default function CommerciauPage() {
     setSubmitting(false)
     if (res.success && res.code_commercial) {
       setShowCreate(false)
+      const createdNom = form.nom
+      const createdTel = form.telephone
       setForm({ nom: '', telephone: '' })
-      setCreatedCode({ code: res.code_commercial, nom: form.nom })
       load()
+      // Show MDP modal with the generated secret
+      if (res.code_secret) {
+        setMdpModal({
+          nom: createdNom,
+          telephone: createdTel,
+          code_commercial: res.code_commercial,
+          mdp: res.code_secret,
+        })
+      }
     } else {
       setMsg(res.message || 'Erreur lors de la création')
     }
@@ -45,17 +74,17 @@ export default function CommerciauPage() {
     load()
   }
 
-  async function handleDemoCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!demoTarget) return
-    setDemoSubmitting(true)
-    setDemoMsg('')
-    const res = await createDemoAccount({ telephone: demoPhone, nom_commercial: demoTarget.nom, code_commercial: demoTarget.code_commercial })
-    setDemoSubmitting(false)
-    if (res.success && res.telephone) {
-      setDemoResult({ telephone: res.telephone, mot_de_passe: res.mot_de_passe!, nom_commerce: res.nom_commerce! })
-    } else {
-      setDemoMsg(res.message || 'Erreur lors de la création')
+  async function handleGenererMdp(c: Commercial) {
+    setGeneratingFor(c.uid)
+    const res = await resetSecret(c.uid)
+    setGeneratingFor(null)
+    if (res.success && res.code_secret) {
+      setMdpModal({
+        nom: c.nom,
+        telephone: c.telephone,
+        code_commercial: c.code_commercial,
+        mdp: res.code_secret,
+      })
     }
   }
 
@@ -103,11 +132,11 @@ export default function CommerciauPage() {
                     {c.actif ? 'Désactiver' : 'Activer'}
                   </button>
                   <button
-                    onClick={() => { setDemoTarget(c); setDemoPhone(c.telephone || ''); setDemoMsg(''); setDemoResult(null) }}
-                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-                    title="Créer un compte démo ASSA pour ce commercial"
+                    onClick={() => handleGenererMdp(c)}
+                    disabled={generatingFor === c.uid}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
                   >
-                    Compte démo
+                    {generatingFor === c.uid ? '…' : '🔑 MDP'}
                   </button>
                 </div>
               ),
@@ -142,7 +171,7 @@ export default function CommerciauPage() {
                 className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
               />
             </div>
-            <p className="text-xs text-white/30">Un code commercial (COMXXX) sera généré automatiquement.</p>
+            <p className="text-xs text-white/30">Un code COMXXX et un MDP seront générés automatiquement.</p>
             {msg && <p className="text-red-400 text-sm">{msg}</p>}
             <button
               type="submit"
@@ -155,78 +184,36 @@ export default function CommerciauPage() {
         </Modal>
       )}
 
-      {/* Modal démo — saisie du téléphone */}
-      {demoTarget && !demoResult && (
-        <Modal title={`Compte démo — ${demoTarget.nom}`} onClose={() => setDemoTarget(null)}>
-          <form onSubmit={handleDemoCreate} className="flex flex-col gap-4">
-            <p className="text-xs text-white/40">Créer un compte ASSA actif pour que <strong className="text-white/60">{demoTarget.nom}</strong> puisse faire des démonstrations aux clients.</p>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Téléphone du compte démo</label>
-              <input
-                type="tel"
-                placeholder="07 00 00 00 00"
-                value={demoPhone}
-                onChange={e => setDemoPhone(e.target.value)}
-                required
-                className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
-              />
-            </div>
-            <p className="text-xs text-white/30">Un mot de passe temporaire sera généré automatiquement.</p>
-            {demoMsg && <p className="text-red-400 text-sm">{demoMsg}</p>}
-            <button
-              type="submit"
-              disabled={demoSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
-            >
-              {demoSubmitting ? 'Création…' : 'Créer le compte démo'}
-            </button>
-          </form>
-        </Modal>
-      )}
-
-      {/* Modal résultat — affiche les credentials démo */}
-      {demoResult && (
-        <Modal title="Compte démo créé ✓" onClose={() => { setDemoTarget(null); setDemoResult(null) }}>
-          <div className="flex flex-col gap-4">
-            <p className="text-xs text-white/40 text-center">Transmettez ces identifiants au commercial — le mot de passe ne sera affiché qu&apos;une seule fois.</p>
-            <div className="bg-white/8 border border-white/15 rounded-xl px-5 py-4 flex flex-col gap-3">
-              <div>
-                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Nom du compte</p>
-                <p className="text-white font-semibold">{demoResult.nom_commerce}</p>
-              </div>
-              <div>
-                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Téléphone</p>
-                <p className="text-white font-mono font-bold text-lg">{demoResult.telephone}</p>
-              </div>
-              <div>
-                <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Mot de passe temporaire</p>
-                <p className="text-white font-mono font-bold text-2xl tracking-widest">{demoResult.mot_de_passe}</p>
-              </div>
-            </div>
-            <p className="text-xs text-white/30 text-center">Le commercial se connecte sur assa-dashboard.preo-ia.info</p>
-            <button
-              onClick={() => { setDemoTarget(null); setDemoResult(null) }}
-              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors"
-            >
-              Fermer
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {/* Modal confirmation — affiche le code généré */}
-      {createdCode && (
-        <Modal title="Commercial créé" onClose={() => setCreatedCode(null)}>
+      {/* Modal MDP — affiche code + MDP + bouton WhatsApp */}
+      {mdpModal && (
+        <Modal title="Accès commercial" onClose={() => setMdpModal(null)}>
           <div className="flex flex-col gap-4 items-center">
-            <p className="text-white font-semibold">{createdCode.nom}</p>
-            <div className="bg-white/8 border border-white/15 rounded-xl px-6 py-4 text-center">
-              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Code commercial</p>
-              <p className="text-white font-mono font-bold text-3xl tracking-widest">{createdCode.code}</p>
+            <div className="w-full bg-white/8 border border-white/15 rounded-xl px-5 py-4 flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-white/40 uppercase tracking-wider mb-0.5">Commercial</p>
+                  <p className="text-white font-semibold">{mdpModal.nom}</p>
+                  <p className="text-white/50 text-sm">{mdpModal.telephone}</p>
+                </div>
+                <span className="font-mono font-bold text-brand text-lg">{mdpModal.code_commercial}</span>
+              </div>
+              <div className="border-t border-white/10 pt-3 text-center">
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Mot de passe</p>
+                <p className="text-white font-mono font-bold text-4xl tracking-[0.2em]">{mdpModal.mdp}</p>
+              </div>
             </div>
-            <p className="text-xs text-white/40 text-center">Ce code est attribué au commercial. Les clients l&apos;utiliseront lors de leur inscription.</p>
+            <p className="text-xs text-white/30 text-center">Envoyez ces accès directement au commercial via WhatsApp ↓</p>
+            <a
+              href={buildWhatsAppLink(mdpModal.telephone, mdpModal.nom, mdpModal.code_commercial, mdpModal.mdp)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              <span>📲</span> Envoyer via WhatsApp
+            </a>
             <button
-              onClick={() => setCreatedCode(null)}
-              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-xl transition-colors"
+              onClick={() => setMdpModal(null)}
+              className="w-full text-white/40 hover:text-white/60 text-sm transition-colors py-1"
             >
               Fermer
             </button>
