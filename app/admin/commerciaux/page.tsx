@@ -24,12 +24,17 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📄 Vos guides sont joints à ce message.\n\n` +
   `Bonne vente ! 🚀`
 
+function toWaPhone(telephone: string): string {
+  const cleaned = telephone.replace(/[\s\-().+]/g, '')
+  return cleaned.startsWith('225') ? cleaned : '225' + cleaned
+}
+
 async function sharePackage(nom: string, telephone: string, code: string, mdp: string) {
   const text = MSG_TEMPLATE(nom, code, mdp, telephone)
 
   if (!navigator.share) {
     // Fallback: WhatsApp deep link (text only)
-    const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
+    const phone = toWaPhone(telephone)
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
     return
   }
@@ -54,7 +59,7 @@ async function sharePackage(nom: string, telephone: string, code: string, mdp: s
   } catch (e) {
     if ((e as Error).name !== 'AbortError') {
       // Last resort: WhatsApp link
-      const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
+      const phone = toWaPhone(telephone)
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
     }
   }
