@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash, randomBytes, randomUUID } from 'crypto'
 
 const N8N = 'https://automation.preo-ia.info/webhook/admin'
+const N8N_PUBLIC = 'https://automation.preo-ia.info/webhook'
 
 // Generate next COM code from existing list
 function nextComCode(existingCodes: string[]): string {
@@ -63,6 +64,29 @@ export async function POST(req: NextRequest) {
       const err = await createRes.text()
       return NextResponse.json({ success: false, message: err }, { status: 500 })
     }
+
+    // Create demo ASSA account for the commercial
+    try {
+      const nom_commerce = `Démo ${nom}`
+      const inscRes = await fetch(`${N8N_PUBLIC}/inscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telephone, mot_de_passe: code_secret, nom_commerce, code_commercial }),
+        cache: 'no-store',
+      })
+      if (inscRes.status === 201) {
+        const inscData = await inscRes.json()
+        const userUid = inscData?.data?.uid || inscData?.uid
+        if (userUid) {
+          await fetch(`${N8N}/user-activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: userUid }),
+            cache: 'no-store',
+          })
+        }
+      }
+    } catch { /* demo account creation is best-effort */ }
 
     return NextResponse.json({ success: true, code_commercial, code_secret })
   } catch (e) {

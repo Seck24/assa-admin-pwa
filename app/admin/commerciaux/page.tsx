@@ -4,20 +4,60 @@ import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
 import { listCommerciaux, createCommercial, toggleCommercial, type Commercial } from '@/lib/api'
 
-async function resetSecret(uid: string): Promise<{ success: boolean; code_secret?: string; message?: string }> {
+async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secret?: string; message?: string }> {
   const res = await fetch('/api/commercial-reset-secret', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid }),
+    body: JSON.stringify({ uid: c.uid, telephone: c.telephone, nom: c.nom, code_commercial: c.code_commercial }),
     cache: 'no-store',
   })
   return res.json()
 }
 
-function buildWhatsAppLink(telephone: string, nom: string, codeCommercial: string, mdp: string) {
-  const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
-  const msg = `Bonjour ${nom}, voici vos accès ASSA :\n\n🔑 Code commercial : ${codeCommercial}\n🔒 Mot de passe : ${mdp}\n\n📲 Connectez-vous sur : assa-dashboard.preo-ia.info`
-  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
+  `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
+  `🔑 Code commercial : ${code}\n` +
+  `🔒 Mot de passe : ${mdp}\n` +
+  `📞 Téléphone (connexion) : ${tel}\n\n` +
+  `📱 Application ASSA (pour vos démos) :\nhttps://assa.preo-ia.info/\n\n` +
+  `📊 Tableau de bord propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
+  `📄 Vos guides sont joints à ce message.\n\n` +
+  `Bonne vente ! 🚀`
+
+async function sharePackage(nom: string, telephone: string, code: string, mdp: string) {
+  const text = MSG_TEMPLATE(nom, code, mdp, telephone)
+
+  if (!navigator.share) {
+    // Fallback: WhatsApp deep link (text only)
+    const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
+    return
+  }
+
+  try {
+    // Fetch both PDFs as files
+    const [guide, brief] = await Promise.all([
+      fetch('/docs/ASSA_Guide_Prise_En_Main.pdf').then(r => r.blob()),
+      fetch('/docs/ASSA_Brief_Commercial.pdf').then(r => r.blob()),
+    ])
+    const files = [
+      new File([guide], 'ASSA_Guide_Prise_En_Main.pdf', { type: 'application/pdf' }),
+      new File([brief], 'ASSA_Brief_Commercial.pdf', { type: 'application/pdf' }),
+    ]
+
+    if (navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ text, files })
+    } else {
+      // Can't share files — share text only
+      await navigator.share({ text })
+    }
+  } catch (e) {
+    if ((e as Error).name !== 'AbortError') {
+      // Last resort: WhatsApp link
+      const phone = telephone.replace(/[\s\-().+]/g, '').replace(/^0/, '225')
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  }
 }
 
 interface MdpInfo {
@@ -36,6 +76,7 @@ export default function CommerciauPage() {
   const [msg, setMsg] = useState('')
   const [mdpModal, setMdpModal] = useState<MdpInfo | null>(null)
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
 
   function load() {
     setLoading(true)
@@ -49,21 +90,13 @@ export default function CommerciauPage() {
     setMsg('')
     const res = await createCommercial(form)
     setSubmitting(false)
-    if (res.success && res.code_commercial) {
-      setShowCreate(false)
+    if (res.success && res.code_commercial && res.code_secret) {
       const createdNom = form.nom
       const createdTel = form.telephone
+      setShowCreate(false)
       setForm({ nom: '', telephone: '' })
       load()
-      // Show MDP modal with the generated secret
-      if (res.code_secret) {
-        setMdpModal({
-          nom: createdNom,
-          telephone: createdTel,
-          code_commercial: res.code_commercial,
-          mdp: res.code_secret,
-        })
-      }
+      setMdpModal({ nom: createdNom, telephone: createdTel, code_commercial: res.code_commercial, mdp: res.code_secret })
     } else {
       setMsg(res.message || 'Erreur lors de la création')
     }
@@ -76,16 +109,18 @@ export default function CommerciauPage() {
 
   async function handleGenererMdp(c: Commercial) {
     setGeneratingFor(c.uid)
-    const res = await resetSecret(c.uid)
+    const res = await resetSecret(c)
     setGeneratingFor(null)
     if (res.success && res.code_secret) {
-      setMdpModal({
-        nom: c.nom,
-        telephone: c.telephone,
-        code_commercial: c.code_commercial,
-        mdp: res.code_secret,
-      })
+      setMdpModal({ nom: c.nom, telephone: c.telephone, code_commercial: c.code_commercial, mdp: res.code_secret })
     }
+  }
+
+  async function handleShare() {
+    if (!mdpModal) return
+    setSharing(true)
+    await sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
+    setSharing(false)
   }
 
   return (
@@ -171,7 +206,7 @@ export default function CommerciauPage() {
                 className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-accent"
               />
             </div>
-            <p className="text-xs text-white/30">Un code COMXXX et un MDP seront générés automatiquement.</p>
+            <p className="text-xs text-white/30">Code COMXXX, MDP et compte ASSA démo générés automatiquement.</p>
             {msg && <p className="text-red-400 text-sm">{msg}</p>}
             <button
               type="submit"
@@ -184,10 +219,10 @@ export default function CommerciauPage() {
         </Modal>
       )}
 
-      {/* Modal MDP — affiche code + MDP + bouton WhatsApp */}
+      {/* Modal MDP + package WhatsApp */}
       {mdpModal && (
-        <Modal title="Accès commercial" onClose={() => setMdpModal(null)}>
-          <div className="flex flex-col gap-4 items-center">
+        <Modal title="Kit commercial prêt" onClose={() => setMdpModal(null)}>
+          <div className="flex flex-col gap-4">
             <div className="w-full bg-white/8 border border-white/15 rounded-xl px-5 py-4 flex flex-col gap-3">
               <div className="flex justify-between items-center">
                 <div>
@@ -201,16 +236,22 @@ export default function CommerciauPage() {
                 <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Mot de passe</p>
                 <p className="text-white font-mono font-bold text-4xl tracking-[0.2em]">{mdpModal.mdp}</p>
               </div>
+              <div className="border-t border-white/10 pt-3 flex flex-col gap-1 text-xs text-white/40">
+                <p>📱 assa.preo-ia.info — Application ASSA (démos)</p>
+                <p>📊 assa-dashboard.preo-ia.info — Dashboard propriétaire</p>
+                <p>📄 2 guides inclus dans l&apos;envoi</p>
+              </div>
             </div>
-            <p className="text-xs text-white/30 text-center">Envoyez ces accès directement au commercial via WhatsApp ↓</p>
-            <a
-              href={buildWhatsAppLink(mdpModal.telephone, mdpModal.nom, mdpModal.code_commercial, mdpModal.mdp)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
+
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm"
             >
-              <span>📲</span> Envoyer via WhatsApp
-            </a>
+              {sharing ? 'Préparation…' : '📦 Envoyer le package complet'}
+            </button>
+            <p className="text-xs text-white/30 text-center -mt-2">Identifiants + 2 guides PDF + liens via WhatsApp</p>
+
             <button
               onClick={() => setMdpModal(null)}
               className="w-full text-white/40 hover:text-white/60 text-sm transition-colors py-1"
