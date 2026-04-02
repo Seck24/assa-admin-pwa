@@ -28,7 +28,7 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📄 Guide Prise en Main :\n${GUIDE_URL}\n\n` +
   `📄 Brief Commercial :\n${BRIEF_URL}\n\n` +
   `📲 Guide Installation Téléphone :\n${INSTALL_URL}\n\n` +
-  `Bonne vente ! 🚀 [v6]`
+  `Bonne vente ! 🚀`
 
 function toWaPhone(telephone: string): string {
   const cleaned = telephone.replace(/[\s\-().+]/g, '')
