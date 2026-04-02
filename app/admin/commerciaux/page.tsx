@@ -14,7 +14,8 @@ async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secr
   return res.json()
 }
 
-const BASE_URL = 'https://assa.preo-ia.info/docs'
+const GUIDE_URL = 'https://drive.google.com/file/d/1m9-EHRvQ7XjZNLBaM5M93tQvcgMJeG54/view'
+const BRIEF_URL = 'https://drive.google.com/file/d/1ysahxzL1LjhlIV7RfZcrtSqqY6MiQEzF/view'
 
 const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `Bonjour ${nom} 👋\n\nVoici votre kit complet ASSA :\n\n` +
@@ -23,8 +24,8 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📞 Téléphone (connexion) : ${tel}\n\n` +
   `📱 Application ASSA (démos) :\nhttps://assa.preo-ia.info/\n\n` +
   `📊 Dashboard propriétaire :\nhttps://assa-dashboard.preo-ia.info/\n\n` +
-  `📄 Guide Prise en Main :\n${BASE_URL}/ASSA_Guide_Prise_En_Main.pdf\n\n` +
-  `📄 Brief Commercial :\n${BASE_URL}/ASSA_Brief_Commercial.pdf\n\n` +
+  `📄 Guide Prise en Main :\n${GUIDE_URL}\n\n` +
+  `📄 Brief Commercial :\n${BRIEF_URL}\n\n` +
   `Bonne vente ! 🚀`
 
 function toWaPhone(telephone: string): string {
