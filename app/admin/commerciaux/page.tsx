@@ -106,7 +106,7 @@ export default function CommerciauPage() {
     if (mdpModal.uid) {
       const next = new Set(sentUids).add(mdpModal.uid)
       setSentUids(next)
-      localStorage.setItem(SENT_KEY, JSON.stringify([...next]))
+      localStorage.setItem(SENT_KEY, JSON.stringify(Array.from(next)))
     }
     setMdpModal(null)
   }
