@@ -6,7 +6,7 @@ RUN npm ci --prefer-offline 2>/dev/null || npm install
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-ARG CACHEBUST=1
+ARG CACHEBUST=20260402
 COPY . .
 RUN npm run build
 
