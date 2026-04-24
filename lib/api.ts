@@ -99,6 +99,10 @@ export function toggleCommercial(uid: string, actif: boolean) {
   return apiFetch<{ success: boolean }>('/commercial-toggle', { uid, actif })
 }
 
+export function deleteCommercial(uid: string) {
+  return apiFetch<{ success: boolean; message?: string }>('/commercial-delete', { uid })
+}
+
 
 export function listClients(page = 1, search = '') {
   return apiFetch<{ clients: Client[]; total: number }>('/users-list-v2', { page, search })

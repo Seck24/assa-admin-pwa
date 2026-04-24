@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/DataTable'
 import Modal from '@/components/Modal'
-import { listCommerciaux, createCommercial, toggleCommercial, type Commercial } from '@/lib/api'
+import { listCommerciaux, createCommercial, toggleCommercial, deleteCommercial, type Commercial } from '@/lib/api'
 
 async function resetSecret(c: Commercial): Promise<{ success: boolean; code_secret?: string; message?: string }> {
   const res = await fetch('/api/commercial-reset-secret', {
@@ -30,6 +30,11 @@ const MSG_TEMPLATE = (nom: string, code: string, mdp: string, tel: string) =>
   `📲 Guide Installation Téléphone :\n${INSTALL_URL}\n\n` +
   `Bonne vente ! 🚀`
 
+const MSG_MDP_ONLY = (nom: string, mdp: string) =>
+  `Bonjour ${nom} 👋\n\nVotre nouveau mot de passe ASSA :\n\n` +
+  `🔒 Mot de passe : ${mdp}\n\n` +
+  `Connectez-vous avec votre téléphone habituel.\nBonne continuation ! 🚀`
+
 function toWaPhone(telephone: string): string {
   const cleaned = telephone.replace(/[\s\-().+]/g, '')
   return cleaned.startsWith('225') ? cleaned : '225' + cleaned
@@ -37,6 +42,12 @@ function toWaPhone(telephone: string): string {
 
 function sharePackage(nom: string, telephone: string, code: string, mdp: string) {
   const text = MSG_TEMPLATE(nom, code, mdp, telephone)
+  const phone = toWaPhone(telephone)
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
+}
+
+function shareMdpOnly(nom: string, telephone: string, mdp: string) {
+  const text = MSG_MDP_ONLY(nom, mdp)
   const phone = toWaPhone(telephone)
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
 }
@@ -59,6 +70,10 @@ export default function CommerciauPage() {
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState('')
   const [mdpModal, setMdpModal] = useState<MdpInfo | null>(null)
+  const [isResetMdp, setIsResetMdp] = useState(false)
+  const [confirmResetFor, setConfirmResetFor] = useState<Commercial | null>(null)
+  const [confirmDeleteFor, setConfirmDeleteFor] = useState<Commercial | null>(null)
+  const [deletingFor, setDeletingFor] = useState<string | null>(null)
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
   const [sentUids, setSentUids] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem(SENT_KEY) || '[]')) } catch { return new Set() }
@@ -82,6 +97,7 @@ export default function CommerciauPage() {
       setShowCreate(false)
       setForm({ nom: '', telephone: '' })
       load()
+      setIsResetMdp(false)
       setMdpModal({ uid: '', nom: createdNom, telephone: createdTel, code_commercial: res.code_commercial, mdp: res.code_secret })
     } else {
       setMsg(res.message || 'Erreur lors de la création')
@@ -94,23 +110,38 @@ export default function CommerciauPage() {
   }
 
   async function handleGenererMdp(c: Commercial) {
+    setConfirmResetFor(null)
     setGeneratingFor(c.uid)
     const res = await resetSecret(c)
     setGeneratingFor(null)
     if (res.success && res.code_secret) {
+      setIsResetMdp(true)
       setMdpModal({ uid: c.uid, nom: c.nom, telephone: c.telephone, code_commercial: c.code_commercial, mdp: res.code_secret })
     }
   }
 
+  async function handleDelete(c: Commercial) {
+    setConfirmDeleteFor(null)
+    setDeletingFor(c.uid)
+    await deleteCommercial(c.uid)
+    setDeletingFor(null)
+    load()
+  }
+
   function handleShare() {
     if (!mdpModal) return
-    sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
+    if (isResetMdp) {
+      shareMdpOnly(mdpModal.nom, mdpModal.telephone, mdpModal.mdp)
+    } else {
+      sharePackage(mdpModal.nom, mdpModal.telephone, mdpModal.code_commercial, mdpModal.mdp)
+    }
     if (mdpModal.uid) {
       const next = new Set(sentUids).add(mdpModal.uid)
       setSentUids(next)
       localStorage.setItem(SENT_KEY, JSON.stringify(Array.from(next)))
     }
     setMdpModal(null)
+    setIsResetMdp(false)
   }
 
   return (
@@ -157,11 +188,18 @@ export default function CommerciauPage() {
                     {c.actif ? 'Désactiver' : 'Activer'}
                   </button>
                   <button
-                    onClick={() => handleGenererMdp(c)}
+                    onClick={() => setConfirmResetFor(c)}
                     disabled={generatingFor === c.uid}
                     className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-50 ${sentUids.has(c.uid) ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
                   >
                     {generatingFor === c.uid ? '…' : '🔑 MDP'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteFor(c)}
+                    disabled={deletingFor === c.uid}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-50 bg-red-600/20 text-red-400 hover:bg-red-600/30"
+                  >
+                    {deletingFor === c.uid ? '…' : '🗑️'}
                   </button>
                 </div>
               ),
@@ -209,9 +247,61 @@ export default function CommerciauPage() {
         </Modal>
       )}
 
+      {/* Modal confirmation reset MDP */}
+      {confirmResetFor && (
+        <Modal title="Confirmer le reset MDP" onClose={() => setConfirmResetFor(null)}>
+          <div className="flex flex-col gap-4">
+            <p className="text-white/70 text-sm">
+              Voulez-vous vraiment régénérer le mot de passe de <span className="text-white font-semibold">{confirmResetFor.nom}</span> ({confirmResetFor.code_commercial}) ?
+            </p>
+            <p className="text-amber-400/70 text-xs">⚠️ L&apos;ancien mot de passe sera remplacé définitivement.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmResetFor(null)}
+                className="flex-1 text-white/40 hover:text-white/60 border border-white/15 py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleGenererMdp(confirmResetFor)}
+                className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {confirmDeleteFor && (
+        <Modal title="Supprimer le commercial" onClose={() => setConfirmDeleteFor(null)}>
+          <div className="flex flex-col gap-4">
+            <p className="text-white/70 text-sm">
+              Voulez-vous vraiment supprimer définitivement <span className="text-white font-semibold">{confirmDeleteFor.nom}</span> ({confirmDeleteFor.code_commercial}) ?
+            </p>
+            <p className="text-red-400/70 text-xs">⚠️ Cette action est irréversible. Toutes les données liées seront supprimées.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteFor(null)}
+                className="flex-1 text-white/40 hover:text-white/60 border border-white/15 py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDeleteFor)}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Modal MDP + package WhatsApp */}
       {mdpModal && (
-        <Modal title="Kit commercial prêt" onClose={() => setMdpModal(null)}>
+        <Modal title={isResetMdp ? "Nouveau mot de passe" : "Kit commercial prêt"} onClose={() => { setMdpModal(null); setIsResetMdp(false) }}>
           <div className="flex flex-col gap-4">
             <div className="w-full bg-white/8 border border-white/15 rounded-xl px-5 py-4 flex flex-col gap-3">
               <div className="flex justify-between items-center">
@@ -226,23 +316,27 @@ export default function CommerciauPage() {
                 <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Mot de passe</p>
                 <p className="text-white font-mono font-bold text-4xl tracking-[0.2em]">{mdpModal.mdp}</p>
               </div>
-              <div className="border-t border-white/10 pt-3 flex flex-col gap-1 text-xs text-white/40">
-                <p>📱 assa.preo-ia.info — Application ASSA (démos)</p>
-                <p>📊 assa-dashboard.preo-ia.info — Dashboard propriétaire</p>
-                <p>📄 3 guides inclus dans l&apos;envoi</p>
-              </div>
+              {!isResetMdp && (
+                <div className="border-t border-white/10 pt-3 flex flex-col gap-1 text-xs text-white/40">
+                  <p>📱 assa.preo-ia.info — Application ASSA (démos)</p>
+                  <p>📊 assa-dashboard.preo-ia.info — Dashboard propriétaire</p>
+                  <p>📄 3 guides inclus dans l&apos;envoi</p>
+                </div>
+              )}
             </div>
 
             <button
               onClick={handleShare}
               className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
             >
-              📦 Envoyer le package complet
+              {isResetMdp ? '🔒 Envoyer le MDP via WhatsApp' : '📦 Envoyer le package complet'}
             </button>
-            <p className="text-xs text-white/30 text-center -mt-2">Identifiants + 2 guides PDF + liens via WhatsApp</p>
+            <p className="text-xs text-white/30 text-center -mt-2">
+              {isResetMdp ? 'Seul le nouveau mot de passe sera envoyé' : 'Identifiants + 2 guides PDF + liens via WhatsApp'}
+            </p>
 
             <button
-              onClick={() => setMdpModal(null)}
+              onClick={() => { setMdpModal(null); setIsResetMdp(false) }}
               className="w-full text-white/40 hover:text-white/60 text-sm transition-colors py-1"
             >
               Fermer
