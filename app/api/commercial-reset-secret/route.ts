@@ -14,7 +14,15 @@ function genSecret(): string {
   return result
 }
 
+function normalizePhone(tel: string): string {
+  let clean = tel.replace(/[^0-9+]/g, '')
+  clean = clean.replace(/^\+225/, '')
+  clean = clean.replace(/^0/, '')
+  return '+225' + clean
+}
+
 async function createOrUpdateDemoAccount(telephone: string, code_secret: string, nom_commerce: string, code_commercial: string) {
+  telephone = normalizePhone(telephone)
   // Try to create via inscription
   const inscRes = await fetch(`${N8N}/inscription`, {
     method: 'POST',

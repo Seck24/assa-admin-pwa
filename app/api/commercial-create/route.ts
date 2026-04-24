@@ -4,6 +4,13 @@ import { createHash, randomBytes, randomUUID } from 'crypto'
 const N8N = 'https://automation.preo-ia.info/webhook/admin'
 const N8N_PUBLIC = 'https://automation.preo-ia.info/webhook'
 
+function normalizePhone(tel: string): string {
+  let clean = tel.replace(/[^0-9+]/g, '')
+  clean = clean.replace(/^\+225/, '')
+  clean = clean.replace(/^0/, '')
+  return '+225' + clean
+}
+
 // Generate next COM code from existing list
 function nextComCode(existingCodes: string[]): string {
   const nums = existingCodes
@@ -68,10 +75,11 @@ export async function POST(req: NextRequest) {
     // Create demo ASSA account for the commercial
     try {
       const nom_commerce = `Démo ${nom}`
+      const normalizedTel = normalizePhone(telephone)
       const inscRes = await fetch(`${N8N_PUBLIC}/inscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telephone, mot_de_passe: code_secret, nom_commerce, code_commercial }),
+        body: JSON.stringify({ telephone: normalizedTel, mot_de_passe: code_secret, nom_commerce, code_commercial }),
         cache: 'no-store',
       })
       if (inscRes.status === 201) {
