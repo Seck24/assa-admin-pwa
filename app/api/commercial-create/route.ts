@@ -5,9 +5,9 @@ const N8N = 'https://automation.preo-ia.info/webhook/admin'
 const N8N_PUBLIC = 'https://automation.preo-ia.info/webhook'
 
 function normalizePhone(tel: string): string {
-  let clean = tel.replace(/[^0-9+]/g, '')
-  clean = clean.replace(/^\+225/, '')
-  clean = clean.replace(/^0/, '')
+  let clean = tel.replace(/[^0-9]/g, '')
+  if (clean.startsWith('225')) clean = clean.substring(3)
+  if (!clean.startsWith('0')) clean = '0' + clean
   return '+225' + clean
 }
 
