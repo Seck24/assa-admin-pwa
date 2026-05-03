@@ -52,6 +52,19 @@ export interface Client {
   capture_paiement?: string
 }
 
+export interface InternalAccount {
+  uid: string
+  telephone: string
+  nom_commerce: string
+  nom_complet: string
+  account_status: string
+  date_inscription: string
+  date_activation?: string
+  code_commercial_user: string
+  code_commercial_match: string
+  nom_commercial: string
+}
+
 export interface Activation {
   uid: string
   telephone_client: string
@@ -119,6 +132,10 @@ export function suspendClient(uid: string) {
 
 export function deleteClient(uid: string) {
   return apiFetch<{ success: boolean }>('/user-delete', { uid })
+}
+
+export function listInternalAccounts(page = 1) {
+  return apiFetch<{ internes: InternalAccount[]; total: number }>('/internal-accounts-list', { page })
 }
 
 export function listActivations(page = 1, commercial_uid = '') {

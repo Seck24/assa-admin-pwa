@@ -9,6 +9,7 @@ const NAV = [
   { href: '/admin/clients',     icon: '📱', label: 'Clients',      roles: ['super_admin', 'admin'] },
   { href: '/admin/activations', icon: '⚡', label: 'Activations',  roles: ['super_admin', 'admin'] },
   { href: '/admin/commissions', icon: '💰', label: 'Commissions',  roles: ['super_admin'] },
+  { href: '/admin/comptes-internes', icon: '🔧', label: 'Internes', roles: ['super_admin'] },
   { href: '/admin/admins',      icon: '🛡️', label: 'Admins',       roles: ['super_admin'] },
 ]
 
