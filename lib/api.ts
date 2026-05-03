@@ -62,6 +62,8 @@ export interface InternalAccount {
   date_activation?: string
   code_commercial_user: string
   code_commercial_match: string
+  commercial_uid: string
+  commercial_actif: boolean
   nom_commercial: string
 }
 

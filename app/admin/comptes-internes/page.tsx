@@ -7,6 +7,8 @@ import {
   suspendClient,
   activateClient,
   deleteClient,
+  toggleCommercial,
+  deleteCommercial,
   type InternalAccount,
 } from '@/lib/api'
 
@@ -45,11 +47,17 @@ export default function ComptesInternesPage() {
     if (actionLoading) return
     setActionLoading(row.uid)
     setError(null)
+    const wasActif = row.account_status === 'actif'
     try {
-      if (row.account_status === 'actif') {
+      // Toggle compte démo (user maquis)
+      if (wasActif) {
         await suspendClient(row.uid)
       } else {
         await activateClient(row.uid, row.account_status === 'suspendu')
+      }
+      // Toggle commercial associé (code COM00X)
+      if (row.commercial_uid) {
+        await toggleCommercial(row.commercial_uid, !wasActif)
       }
       await load()
     } catch (e) {
@@ -61,11 +69,17 @@ export default function ComptesInternesPage() {
 
   async function handleConfirmDelete() {
     if (!confirmDelete || actionLoading) return
-    const uid = confirmDelete.uid
-    setActionLoading(uid)
+    const userUid = confirmDelete.uid
+    const commercialUid = confirmDelete.commercial_uid
+    setActionLoading(userUid)
     setError(null)
     try {
-      await deleteClient(uid)
+      // 1. Supprimer le compte démo (user maquis) + ses ventes/dépenses/etc.
+      await deleteClient(userUid)
+      // 2. Supprimer le commercial associé (libère le code COM00X)
+      if (commercialUid) {
+        await deleteCommercial(commercialUid)
+      }
       setConfirmDelete(null)
       await load()
     } catch (e) {
@@ -163,7 +177,7 @@ export default function ComptesInternesPage() {
               <p className="text-xs text-white/60 mt-1">{confirmDelete.telephone}</p>
             </div>
             <p className="text-xs text-red-300/80">
-              ⚠️ Cette action supprime aussi toutes les ventes, dépenses, livraisons et inventaires associés. Le compte commercial (login app commerciale) n'est PAS supprimé.
+              ⚠️ Cette action supprime aussi le COMMERCIAL (login app commerciale + code {confirmDelete.code_commercial_match || 'COM00X'} libéré) ET toutes les ventes/dépenses/livraisons/inventaires associés. Action irréversible.
             </p>
           </div>
           <div className="flex gap-3 justify-end">
